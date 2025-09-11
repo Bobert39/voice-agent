@@ -1,0 +1,116 @@
+# Example Terraform Variables for Capitol Eye Care Voice Agent
+# Copy this file to terraform.tfvars and update values for your environment
+
+# General Configuration
+aws_region   = "us-east-1"
+environment  = "development"  # development, staging, production
+project_name = "voice-agent"
+
+# Database Configuration
+db_instance_class      = "db.t3.medium"    # Use db.r5.large for production
+db_name               = "voiceagent"
+db_username           = "dbadmin"
+db_allocated_storage  = 100                # GB
+db_max_allocated_storage = 1000            # GB for auto-scaling
+
+# Redis Configuration
+redis_node_type       = "cache.t3.micro"   # Use cache.r5.large for production
+redis_num_cache_nodes = 2                  # Use 3+ for production
+
+# Application Configuration
+app_port          = 8080
+app_cpu           = 512                     # CPU units (256, 512, 1024, 2048, 4096)
+app_memory        = 1024                    # Memory in MB
+app_desired_count = 2                       # Number of application instances
+
+# Monitoring and Alerting
+alert_email                    = "admin@capitoleyecare.com"
+enable_detailed_monitoring     = true
+cloudwatch_log_retention_days  = 30
+
+# Security Configuration
+enable_deletion_protection = false         # Set to true for production
+enable_vpc_flow_logs      = true
+enable_cloudtrail         = true
+ssl_certificate_domain    = ""             # Set your domain for SSL
+
+# Backup Configuration
+backup_retention_days     = 35             # 35 days for development, 2555 for production
+enable_cross_region_backup = false        # Enable for production
+
+# Network Configuration
+enable_nat_gateway    = true
+single_nat_gateway    = true               # Set to false for production (multi-AZ)
+
+# Cost Optimization
+enable_spot_instances      = false         # Can enable for development
+enable_reserved_instances  = false         # Enable for production
+
+# Compliance Configuration
+hipaa_compliant       = true
+encryption_at_rest    = true
+encryption_in_transit = true
+audit_logging        = true
+
+# Feature Flags
+enable_auto_scaling         = true
+enable_load_balancer_logs   = true
+enable_container_insights   = true
+
+# Development/Testing Configuration
+create_test_data    = false                # Set to true for development
+enable_debug_mode   = false
+
+# Voice Agent API Keys (will be stored in AWS Secrets Manager)
+# Leave empty here and set via environment variables or AWS CLI
+twilio_account_sid  = ""                   # Set via TF_VAR_twilio_account_sid
+openai_api_key     = ""                   # Set via TF_VAR_openai_api_key
+elevenlabs_api_key = ""                   # Set via TF_VAR_elevenlabs_api_key
+openemr_base_url   = ""                   # Set to your OpenEMR instance URL
+
+# Additional Tags
+additional_tags = {
+  Department = "Healthcare IT"
+  Contact    = "devops@capitoleyecare.com"
+  Backup     = "Required"
+  Monitoring = "Critical"
+}
+
+cost_center         = "IT-Healthcare"
+data_classification = "PHI"
+
+# Environment-Specific Examples:
+
+# DEVELOPMENT ENVIRONMENT
+# ---------------------
+# environment = "development"
+# db_instance_class = "db.t3.small"
+# redis_node_type = "cache.t3.micro"
+# redis_num_cache_nodes = 1
+# single_nat_gateway = true
+# enable_deletion_protection = false
+# backup_retention_days = 7
+# create_test_data = true
+
+# STAGING ENVIRONMENT
+# ------------------
+# environment = "staging"
+# db_instance_class = "db.t3.medium"
+# redis_node_type = "cache.t3.small"
+# redis_num_cache_nodes = 2
+# single_nat_gateway = false
+# enable_deletion_protection = false
+# backup_retention_days = 35
+
+# PRODUCTION ENVIRONMENT
+# ---------------------
+# environment = "production"
+# db_instance_class = "db.r5.large"
+# redis_node_type = "cache.r5.large"
+# redis_num_cache_nodes = 3
+# single_nat_gateway = false
+# enable_deletion_protection = true
+# backup_retention_days = 2555  # 7 years for HIPAA
+# enable_cross_region_backup = true
+# enable_reserved_instances = true
+# alert_email = "alerts@capitoleyecare.com"
