@@ -1,0 +1,66 @@
+{
+  "name": "ai-voice-agent-optometry",
+  "version": "1.0.0",
+  "description": "AI Voice Agent for Optometry Practice - HIPAA compliant voice interaction system",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "build:clean": "tsc -b --clean",
+    "build:watch": "tsc -b --watch",
+    "build:workspaces": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:integration": "NODE_ENV=test npm run test --workspaces --if-present",
+    "lint": "eslint . --ext .ts,.tsx --cache",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "lint:workspaces": "npm run lint --workspaces --if-present",
+    "dev": "npm run dev --workspace=packages/voice-ai-service --workspace=packages/scheduling-service --workspace=packages/patient-verification-service --workspace=packages/audit-service --workspace=packages/practice-info-service --workspace=packages/admin-dashboard",
+    "dev:all": "concurrently --prefix \"[{name}]\" --names \"voice,schedule,patient,audit,practice,admin\" \"npm run dev --workspace=packages/voice-ai-service\" \"npm run dev --workspace=packages/scheduling-service\" \"npm run dev --workspace=packages/patient-verification-service\" \"npm run dev --workspace=packages/audit-service\" \"npm run dev --workspace=packages/practice-info-service\" \"npm run dev --workspace=packages/admin-dashboard\"",
+    "docker:dev": "docker-compose -f docker-compose.dev.yml up --build",
+    "docker:dev:detached": "docker-compose -f docker-compose.dev.yml up --build -d",
+    "docker:dev:down": "docker-compose -f docker-compose.dev.yml down",
+    "docker:dev:logs": "docker-compose -f docker-compose.dev.yml logs -f",
+    "docker:dev:clean": "docker-compose -f docker-compose.dev.yml down -v --remove-orphans",
+    "docker:dev:rebuild": "docker-compose -f docker-compose.dev.yml down && docker-compose -f docker-compose.dev.yml up --build --force-recreate",
+    "setup:dev": "cp .env.development .env && npm run docker:dev:clean && npm run docker:dev:detached",
+    "setup:local": "cp .env.development .env && npm install && npm run build",
+    "db:migrate": "npm run db:migrate --workspace=packages/shared-utils",
+    "db:seed": "npm run db:seed --workspace=packages/shared-utils",
+    "db:reset": "npm run db:reset --workspace=packages/shared-utils",
+    "openemr:test": "npm run test --workspace=src/tests",
+    "health:check": "curl -f http://localhost:8080/health",
+    "clean": "npm run clean --workspaces --if-present && rimraf node_modules dist",
+    "prepare": "husky install",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "optometry",
+    "voice-ai",
+    "healthcare",
+    "hipaa",
+    "openemr"
+  ],
+  "author": "AI Voice Agent Development Team",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20.11.0",
+    "npm": ">=10.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-jest": "^27.6.3",
+    "eslint-plugin-prettier": "^5.1.3",
+    "husky": "^8.0.3",
+    "prettier": "^3.1.1",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3"
+  }
+}

@@ -1,0 +1,292 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: voice-agent-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: voice_agent_dev
+      POSTGRES_USER: voice_agent
+      POSTGRES_PASSWORD: dev_password_123
+      POSTGRES_MULTIPLE_DATABASES: voice_agent_test
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/database/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U voice_agent -d voice_agent_dev"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - voice-agent-net
+
+  # Redis Cache/Session Store
+  redis:
+    image: redis:7-alpine
+    container_name: voice-agent-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --requirepass dev_redis_password
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "dev_redis_password", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - voice-agent-net
+
+  # LocalStack for AWS Services (S3, SQS, etc.)
+  localstack:
+    image: localstack/localstack:3.0
+    container_name: voice-agent-localstack
+    restart: unless-stopped
+    ports:
+      - "4566:4566"  # Main LocalStack endpoint
+      - "4510-4559:4510-4559"  # External services port range
+    environment:
+      - DEBUG=1
+      - SERVICES=s3,sqs,sns,cloudwatch,logs,kms,secretsmanager
+      - DATA_DIR=/tmp/localstack/data
+      - HOST_TMP_FOLDER=/tmp/localstack
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    volumes:
+      - localstack_data:/tmp/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - voice-agent-net
+
+  # Mock OpenEMR API Server
+  mock-openemr:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/mock-openemr.Dockerfile
+    container_name: voice-agent-mock-openemr
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+    environment:
+      - NODE_ENV=development
+      - PORT=8088
+      - MOCK_DATA_PRESET=capitol_eye_care
+    volumes:
+      - ./src/services/openemr-mock-api.ts:/app/server.ts:ro
+      - ./infrastructure/mock-data:/app/data:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - voice-agent-net
+
+  # Voice AI Service
+  voice-ai-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/service.Dockerfile
+      args:
+        SERVICE_NAME: voice-ai-service
+    container_name: voice-ai-service
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DATABASE_URL=postgresql://voice_agent:dev_password_123@postgres:5432/voice_agent_dev
+      - REDIS_URL=redis://:dev_redis_password@redis:6379
+      - OPENEMR_BASE_URL=http://mock-openemr:8088
+      - USE_MOCK_API=true
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    volumes:
+      - ./packages/voice-ai-service/src:/app/src:ro
+      - ./packages/shared-utils:/app/node_modules/@ai-voice-agent/shared-utils:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mock-openemr:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+    networks:
+      - voice-agent-net
+
+  # Patient Verification Service
+  patient-verification-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/service.Dockerfile
+      args:
+        SERVICE_NAME: patient-verification-service
+    container_name: patient-verification-service
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - DATABASE_URL=postgresql://voice_agent:dev_password_123@postgres:5432/voice_agent_dev
+      - REDIS_URL=redis://:dev_redis_password@redis:6379
+      - OPENEMR_BASE_URL=http://mock-openemr:8088
+      - USE_MOCK_API=true
+    volumes:
+      - ./packages/patient-verification-service/src:/app/src:ro
+      - ./packages/shared-utils:/app/node_modules/@ai-voice-agent/shared-utils:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mock-openemr:
+        condition: service_healthy
+    networks:
+      - voice-agent-net
+
+  # Scheduling Service
+  scheduling-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/service.Dockerfile
+      args:
+        SERVICE_NAME: scheduling-service
+    container_name: scheduling-service
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=development
+      - PORT=3003
+      - DATABASE_URL=postgresql://voice_agent:dev_password_123@postgres:5432/voice_agent_dev
+      - REDIS_URL=redis://:dev_redis_password@redis:6379
+      - OPENEMR_BASE_URL=http://mock-openemr:8088
+      - USE_MOCK_API=true
+    volumes:
+      - ./packages/scheduling-service/src:/app/src:ro
+      - ./packages/shared-utils:/app/node_modules/@ai-voice-agent/shared-utils:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mock-openemr:
+        condition: service_healthy
+    networks:
+      - voice-agent-net
+
+  # Audit Service
+  audit-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/service.Dockerfile
+      args:
+        SERVICE_NAME: audit-service
+    container_name: audit-service
+    restart: unless-stopped
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=development
+      - PORT=3004
+      - DATABASE_URL=postgresql://voice_agent:dev_password_123@postgres:5432/voice_agent_dev
+      - REDIS_URL=redis://:dev_redis_password@redis:6379
+    volumes:
+      - ./packages/audit-service/src:/app/src:ro
+      - ./packages/shared-utils:/app/node_modules/@ai-voice-agent/shared-utils:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - voice-agent-net
+
+  # Admin Dashboard
+  admin-dashboard:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/service.Dockerfile
+      args:
+        SERVICE_NAME: admin-dashboard
+    container_name: admin-dashboard
+    restart: unless-stopped
+    ports:
+      - "3005:3005"
+    environment:
+      - NODE_ENV=development
+      - PORT=3005
+      - DATABASE_URL=postgresql://voice_agent:dev_password_123@postgres:5432/voice_agent_dev
+      - REDIS_URL=redis://:dev_redis_password@redis:6379
+      - VOICE_AI_SERVICE_URL=http://voice-ai-service:3001
+      - PATIENT_SERVICE_URL=http://patient-verification-service:3002
+      - SCHEDULING_SERVICE_URL=http://scheduling-service:3003
+      - AUDIT_SERVICE_URL=http://audit-service:3004
+    volumes:
+      - ./packages/admin-dashboard/src:/app/src:ro
+      - ./packages/shared-utils:/app/node_modules/@ai-voice-agent/shared-utils:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      voice-ai-service:
+        condition: service_started
+      patient-verification-service:
+        condition: service_started
+      scheduling-service:
+        condition: service_started
+      audit-service:
+        condition: service_started
+    networks:
+      - voice-agent-net
+
+  # Nginx Reverse Proxy (optional, for unified development endpoint)
+  nginx:
+    image: nginx:alpine
+    container_name: voice-agent-nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./infrastructure/nginx/dev.conf:/etc/nginx/nginx.conf:ro
+      - ./infrastructure/ssl/dev-certs:/etc/nginx/ssl:ro
+    depends_on:
+      - voice-ai-service
+      - patient-verification-service
+      - scheduling-service
+      - audit-service
+      - admin-dashboard
+    networks:
+      - voice-agent-net
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  localstack_data:
+    driver: local
+
+networks:
+  voice-agent-net:
+    driver: bridge

@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true
+  },
+  "references": [
+    { "path": "./packages/shared-utils" },
+    { "path": "./packages/voice-ai-service" },
+    { "path": "./packages/scheduling-service" },
+    { "path": "./packages/patient-verification-service" },
+    { "path": "./packages/audit-service" },
+    { "path": "./packages/admin-dashboard" }
+  ],
+  "files": [],
+  "include": [],
+  "exclude": ["node_modules", "dist", "build", "coverage"]
+}

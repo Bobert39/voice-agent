@@ -65,13 +65,21 @@ coverage.xml
 ehthumbs.db
 Thumbs.db
 
-# Node.js (if applicable)
+# Node.js
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 .npm
 .eslintcache
+
+# TypeScript
+*.tsbuildinfo
+dist/
+out/
+tsconfig.tsbuildinfo
 
 # Logs
 logs
@@ -118,3 +126,28 @@ pids
 
 # Ignore folder
 .ignore/
+
+# AWS
+.aws-sam/
+samconfig.toml
+lambda-deployment-packages/
+
+# Security
+*.pem
+*.key
+certificates/
+secrets/
+
+# Testing
+coverage/
+*.lcov
+.nyc_output/
+
+# IDE
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# Production builds
+*.zip
