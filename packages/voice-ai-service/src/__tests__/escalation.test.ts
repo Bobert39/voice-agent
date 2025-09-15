@@ -98,7 +98,7 @@ describe('Escalation System Tests', () => {
         sessionId: 'test-session-3',
         phoneNumber: '+1234567890',
         transcript: [],
-        currentIntent: undefined,
+        currentIntent: 'general_inquiry',
         previousIntents: [],
         callStartTime: new Date(Date.now() - 60000),
         escalationTime: new Date(),
@@ -344,9 +344,9 @@ describe('Escalation System Tests', () => {
       const resolved = await repository.findByStatus(EscalationStatus.RESOLVED);
 
       expect(triggered).toHaveLength(1);
-      expect(triggered[0].id).toBe('esc-3');
+      expect(triggered[0]?.id).toBe('esc-3');
       expect(resolved).toHaveLength(1);
-      expect(resolved[0].id).toBe('esc-4');
+      expect(resolved[0]?.id).toBe('esc-4');
     });
 
     test('should generate statistics', async () => {
@@ -412,7 +412,7 @@ describe('Escalation Integration Tests', () => {
 
   test('should handle complete escalation workflow', async () => {
     // Create conversation session
-    const session = contextManager.createSession(
+    contextManager.createSession(
       'integration-test-conv',
       'integration-test-session',
       '+1234567890',
