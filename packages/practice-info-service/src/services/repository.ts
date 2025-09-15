@@ -9,9 +9,6 @@ import {
   AppointmentType,
   PracticePolicy,
   PracticeFAQ,
-  SeasonalSchedule,
-  ScheduleNotFoundError,
-  InvalidTimeRangeError,
 } from '../types';
 
 const logger = createLogger('practice-info-repository');

@@ -437,6 +437,264 @@ export class OpenEMRSchedulingClient {
   }
 
   /**
+   * Search appointments by various criteria
+   * Story 3.3: Support multiple lookup methods
+   */
+  async searchAppointments(criteria: {
+    confirmationNumber?: string;
+    patientId?: string;
+    startDate?: string;
+    endDate?: string;
+  }): Promise<any[]> {
+    try {
+      let query = '/Appointment?';
+      const params: string[] = [];
+
+      if (criteria.confirmationNumber) {
+        // Search by confirmation number in appointment identifier
+        params.push(`identifier=${criteria.confirmationNumber}`);
+      }
+
+      if (criteria.patientId) {
+        params.push(`patient=Patient/${criteria.patientId}`);
+      }
+
+      if (criteria.startDate) {
+        params.push(`date=ge${criteria.startDate}`);
+      }
+
+      if (criteria.endDate) {
+        params.push(`date=le${criteria.endDate}`);
+      }
+
+      query += params.join('&');
+
+      const response = await this.makeFHIRRequest<{
+        resourceType: 'Bundle';
+        entry?: Array<{ resource: any }>;
+      }>(query);
+
+      if (!response.entry) {
+        return [];
+      }
+
+      return response.entry.map(entry => this.mapFhirAppointmentToDetails(entry.resource));
+    } catch (error) {
+      console.error('Failed to search appointments:', error);
+      throw new Error('Unable to search appointments');
+    }
+  }
+
+  /**
+   * Search patients by phone number
+   * Story 3.3: Support phone number lookup
+   */
+  async searchPatientsByPhone(phoneNumber: string): Promise<any[]> {
+    try {
+      const normalizedPhone = phoneNumber.replace(/\D/g, '');
+      const query = `/Patient?telecom=${normalizedPhone}`;
+
+      const response = await this.makeFHIRRequest<{
+        resourceType: 'Bundle';
+        entry?: Array<{ resource: any }>;
+      }>(query);
+
+      if (!response.entry) {
+        return [];
+      }
+
+      return response.entry.map(entry => ({
+        id: entry.resource.id,
+        name: this.formatPatientName(entry.resource.name),
+        phoneNumber: this.extractPhoneNumber(entry.resource.telecom),
+        dateOfBirth: entry.resource.birthDate
+      }));
+    } catch (error) {
+      console.error('Failed to search patients by phone:', error);
+      throw new Error('Unable to search patients by phone number');
+    }
+  }
+
+  /**
+   * Get patient details for verification
+   * Story 3.3: Support patient verification
+   */
+  async getPatientDetails(patientId: string): Promise<any | null> {
+    try {
+      const response = await this.makeFHIRRequest<any>(`/Patient/${patientId}`);
+      
+      return {
+        id: response.id,
+        firstName: response.name?.[0]?.given?.[0] || '',
+        lastName: response.name?.[0]?.family || '',
+        dateOfBirth: response.birthDate,
+        phoneNumber: this.extractPhoneNumber(response.telecom)
+      };
+    } catch (error) {
+      console.error('Failed to get patient details:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Update an existing appointment
+   * Story 3.3: Support appointment modifications
+   */
+  async updateAppointment(appointmentId: string, updateData: {
+    start?: string;
+    end?: string;
+    practitionerId?: string;
+    appointmentType?: string;
+    duration?: number;
+    reason?: string;
+  }): Promise<any> {
+    try {
+      // First get the existing appointment
+      const existing = await this.makeFHIRRequest<any>(`/Appointment/${appointmentId}`);
+      
+      // Build the updated appointment
+      const updatedAppointment = {
+        ...existing,
+        start: updateData.start || existing.start,
+        end: updateData.end || existing.end,
+        appointmentType: updateData.appointmentType ? {
+          coding: [{ display: updateData.appointmentType }]
+        } : existing.appointmentType,
+        reason: updateData.reason ? [{
+          text: updateData.reason
+        }] : existing.reason
+      };
+
+      // Update practitioner if provided
+      if (updateData.practitionerId) {
+        const practitionerParticipant = updatedAppointment.participant?.find(
+          (p: any) => p.actor?.reference?.startsWith('Practitioner/')
+        );
+        if (practitionerParticipant) {
+          practitionerParticipant.actor.reference = `Practitioner/${updateData.practitionerId}`;
+        }
+      }
+
+      // Calculate new end time if duration provided
+      if (updateData.duration && updateData.start) {
+        const startTime = new Date(updateData.start);
+        const endTime = new Date(startTime.getTime() + updateData.duration * 60000);
+        updatedAppointment.end = endTime.toISOString();
+      }
+
+      const response = await this.makeFHIRRequest<any>(`/Appointment/${appointmentId}`, {
+        method: 'PUT',
+        body: JSON.stringify(updatedAppointment)
+      });
+
+      return this.mapFhirAppointmentToDetails(response);
+    } catch (error) {
+      console.error('Failed to update appointment:', error);
+      throw new Error('Unable to update appointment');
+    }
+  }
+
+  /**
+   * Check if a specific slot is still available
+   * Story 3.3: Support conflict detection
+   */
+  async checkSlotAvailability(
+    dateTime: string,
+    practitionerId: string,
+    duration: number
+  ): Promise<{ available: boolean; conflicts?: string[] }> {
+    try {
+      const startTime = new Date(dateTime);
+      const endTime = new Date(startTime.getTime() + duration * 60000);
+      
+      const query = `/Appointment?practitioner=Practitioner/${practitionerId}&date=ge${startTime.toISOString()}&date=le${endTime.toISOString()}&status:not=cancelled`;
+
+      const response = await this.makeFHIRRequest<{
+        resourceType: 'Bundle';
+        entry?: Array<{ resource: any }>;
+      }>(query);
+
+      const conflicts = response.entry?.map(entry => 
+        `Existing appointment from ${entry.resource.start} to ${entry.resource.end}`
+      ) || [];
+
+      return {
+        available: conflicts.length === 0,
+        conflicts: conflicts.length > 0 ? conflicts : undefined
+      };
+    } catch (error) {
+      console.error('Failed to check slot availability:', error);
+      return { available: false, conflicts: ['Unable to verify availability'] };
+    }
+  }
+
+  /**
+   * Map FHIR appointment to internal format
+   */
+  private mapFhirAppointmentToDetails(fhirAppointment: any): any {
+    const practitionerParticipant = fhirAppointment.participant?.find(
+      (p: any) => p.actor?.reference?.startsWith('Practitioner/')
+    );
+    const patientParticipant = fhirAppointment.participant?.find(
+      (p: any) => p.actor?.reference?.startsWith('Patient/')
+    );
+
+    return {
+      id: fhirAppointment.id,
+      patientId: patientParticipant?.actor?.reference?.replace('Patient/', '') || '',
+      patientName: patientParticipant?.actor?.display || '',
+      practitionerId: practitionerParticipant?.actor?.reference?.replace('Practitioner/', '') || '',
+      practitionerName: practitionerParticipant?.actor?.display || '',
+      datetime: fhirAppointment.start,
+      duration: this.calculateDurationMinutes(fhirAppointment.start, fhirAppointment.end),
+      type: fhirAppointment.appointmentType?.coding?.[0]?.display || 'routine',
+      status: fhirAppointment.status,
+      reason: fhirAppointment.reason?.[0]?.text || fhirAppointment.description,
+      confirmationNumber: fhirAppointment.identifier?.[0]?.value || this.generateConfirmationNumber()
+    };
+  }
+
+  /**
+   * Format patient name from FHIR format
+   */
+  private formatPatientName(nameArray: any[]): string {
+    if (!nameArray || nameArray.length === 0) return 'Unknown Patient';
+    
+    const name = nameArray[0];
+    const given = name.given?.join(' ') || '';
+    const family = name.family || '';
+    return `${given} ${family}`.trim();
+  }
+
+  /**
+   * Extract phone number from FHIR telecom array
+   */
+  private extractPhoneNumber(telecomArray: any[]): string {
+    if (!telecomArray) return '';
+    
+    const phoneEntry = telecomArray.find(t => t.system === 'phone');
+    return phoneEntry?.value || '';
+  }
+
+  /**
+   * Calculate duration in minutes between two ISO datetime strings
+   */
+  private calculateDurationMinutes(start: string, end: string): number {
+    const startTime = new Date(start);
+    const endTime = new Date(end);
+    return Math.round((endTime.getTime() - startTime.getTime()) / 60000);
+  }
+
+  /**
+   * Generate confirmation number
+   */
+  private generateConfirmationNumber(): string {
+    const timestamp = Date.now().toString(36);
+    const random = Math.random().toString(36).substring(2, 6);
+    return `CE${timestamp}${random}`.toUpperCase();
+  }
+
+  /**
    * Logout and revoke tokens
    */
   async logout(): Promise<void> {

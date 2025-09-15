@@ -14,7 +14,7 @@ export interface IntentResult {
 }
 
 export interface ExtractedEntity {
-  type: 'appointment_type' | 'doctor_name' | 'insurance_provider' | 'date' | 'time' | 'symptom' | 'medication' | 'location' | 'other';
+  type: 'appointment_type' | 'doctor_name' | 'insurance_provider' | 'date' | 'time' | 'date_range' | 'time_preference' | 'relative_time' | 'symptom' | 'medication' | 'location' | 'confirmation_number' | 'phone_number' | 'date_of_birth' | 'patient_name' | 'modification_type' | 'other';
   value: string;
   confidence: number;
   startIndex: number;
@@ -83,6 +83,50 @@ export class IntentRecognitionService {
       examples: ['confirm appointment', 'is my appointment still', 'check my appointment'],
       category: 'appointment',
       urgency: 'low'
+    },
+    'appointment_availability': {
+      description: 'Check available appointment times',
+      examples: ['when can I come in', 'what times are available', 'do you have any openings', 'next available appointment', 'availability next week'],
+      category: 'appointment',
+      urgency: 'medium'
+    },
+    'appointment_refinement': {
+      description: 'Refine or modify appointment search',
+      examples: ['do you have anything earlier', 'what about later', 'different time', 'another day', 'morning instead'],
+      category: 'appointment',
+      urgency: 'medium'
+    },
+
+    // Story 3.3: Appointment Management intents
+    'appointment_lookup': {
+      description: 'Find or look up existing appointments',
+      examples: ['find my appointment', 'look up my appointment', 'check my appointment', 'what appointments do I have'],
+      category: 'appointment',
+      urgency: 'medium'
+    },
+    'appointment_modification': {
+      description: 'General request to modify an appointment',
+      examples: ['modify my appointment', 'change my appointment', 'update my appointment', 'I need to change something'],
+      category: 'appointment',
+      urgency: 'medium'
+    },
+    'appointment_type_change': {
+      description: 'Request to change appointment type',
+      examples: ['change to routine appointment', 'make it a follow-up', 'change appointment type'],
+      category: 'appointment',
+      urgency: 'medium'
+    },
+    'confirmation_number_inquiry': {
+      description: 'Patient providing or asking about confirmation number',
+      examples: ['my confirmation number is', 'confirmation number', 'I have confirmation'],
+      category: 'appointment',
+      urgency: 'medium'
+    },
+    'appointment_verification': {
+      description: 'Patient providing information to verify appointment access',
+      examples: ['my phone number is', 'my date of birth', 'last name is', 'for verification'],
+      category: 'appointment',
+      urgency: 'medium'
     },
 
     // Information requests
@@ -157,6 +201,44 @@ export class IntentRecognitionService {
       examples: ['speak to someone', 'talk to staff', 'need human help'],
       category: 'general',
       urgency: 'medium'
+    },
+
+    // Story 3.5: Appointment confirmation and reminder intents
+    'confirmation_lookup': {
+      description: 'Patient wanting to look up or verify appointment confirmation details',
+      examples: ['check my confirmation', 'what is my confirmation number', 'verify my appointment', 'lookup confirmation'],
+      category: 'appointment',
+      urgency: 'low'
+    },
+    'confirmation_number_inquiry': {
+      description: 'Patient asking about or providing a confirmation number',
+      examples: ['my confirmation number is', 'confirmation number CE123', 'what\'s the confirmation'],
+      category: 'appointment',
+      urgency: 'low'
+    },
+    'appointment_details_request': {
+      description: 'Patient requesting complete appointment details and information',
+      examples: ['when is my appointment', 'appointment details', 'what time is my appointment', 'appointment information'],
+      category: 'appointment',
+      urgency: 'low'
+    },
+    'preparation_instructions_request': {
+      description: 'Patient asking for appointment preparation instructions',
+      examples: ['what do I need to bring', 'how should I prepare', 'preparation instructions', 'what to expect'],
+      category: 'information',
+      urgency: 'low'
+    },
+    'reminder_response': {
+      description: 'Patient responding to an appointment reminder',
+      examples: ['yes I\'ll be there', 'confirm appointment', 'need to reschedule', 'cancel appointment'],
+      category: 'appointment',
+      urgency: 'medium'
+    },
+    'reminder_preference': {
+      description: 'Patient setting or asking about reminder preferences',
+      examples: ['remind me by text', 'no email reminders', 'reminder preferences', 'how will you remind me'],
+      category: 'general',
+      urgency: 'low'
     },
 
     // Fallback
