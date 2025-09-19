@@ -1,8 +1,9 @@
 import OpenAI from 'openai';
-import { ElevenLabsAPI, ElevenLabs } from 'elevenlabs';
-import { logger } from '@ai-voice-agent/shared-utils';
-import FormData from 'form-data';
+import { ElevenLabs } from 'elevenlabs';
+import { createLogger } from '@ai-voice-agent/shared-utils';
 import fs from 'fs';
+
+const logger = createLogger('audio-processing-service');
 
 export interface AudioProcessingConfig {
   openaiApiKey?: string;
@@ -23,7 +24,7 @@ export interface TTSResult {
 
 export class AudioProcessingService {
   private openai: OpenAI;
-  private elevenlabs: ElevenLabsAPI;
+  private elevenlabs: any;
   private voiceId: string;
 
   constructor(config?: AudioProcessingConfig) {
@@ -33,9 +34,7 @@ export class AudioProcessingService {
     });
 
     // Initialize ElevenLabs client
-    this.elevenlabs = new ElevenLabs({
-      apiKey: config?.elevenLabsApiKey || process.env.ELEVENLABS_API_KEY
-    });
+    this.elevenlabs = ElevenLabs;
 
     // Use elderly-friendly voice profile
     this.voiceId = config?.elevenLabsVoiceId || process.env.ELEVENLABS_VOICE_ID || 'pNInz6obpgDQGcFmaJgB'; // Adam voice (clear, professional)

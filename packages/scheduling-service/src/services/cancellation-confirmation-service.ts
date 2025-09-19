@@ -2,7 +2,7 @@
  * Cancellation Confirmation Service for Story 3.4
  * 
  * Handles enhanced confirmation process with reference numbers, multiple delivery methods,
- * and comprehensive confirmation tracking. Provides elderly-friendly confirmation patterns
+ * and comprehensive confirmation tracking. Provides patient-friendly confirmation patterns
  * with clear pronunciation and repetition options.
  */
 
@@ -131,7 +131,7 @@ export class CancellationConfirmationService {
       // Update stored confirmation
       await this.storeCancellationConfirmation(confirmation);
 
-      // Generate confirmation message with elderly-friendly pattern
+      // Generate confirmation message with patient-friendly pattern
       const message = this.generateConfirmationMessage(confirmation, deliveryResults);
 
       return {
@@ -153,7 +153,7 @@ export class CancellationConfirmationService {
   }
 
   /**
-   * Deliver voice confirmation with elderly-friendly patterns
+   * Deliver voice confirmation with patient-friendly patterns
    */
   private async deliverVoiceConfirmation(
     confirmation: CancellationConfirmation
@@ -162,7 +162,7 @@ export class CancellationConfirmationService {
       const appointment = confirmation.originalAppointment;
       const formattedDate = this.formatAppointmentDateForSpeech(appointment.datetime);
       
-      // Generate elderly-friendly voice message
+      // Generate patient-friendly voice message
       const voiceMessage = this.generateVoiceConfirmationMessage(confirmation, formattedDate);
       
       // TODO: Integrate with ElevenLabs TTS service
@@ -235,7 +235,7 @@ export class CancellationConfirmationService {
   }
 
   /**
-   * Generate elderly-friendly voice confirmation message
+   * Generate patient-friendly voice confirmation message
    */
   private generateVoiceConfirmationMessage(
     confirmation: CancellationConfirmation,
@@ -403,7 +403,7 @@ Capitol Eye Care Team
   }
 
   /**
-   * Spell reference number clearly for elderly patients
+   * Spell reference number clearly for patients
    */
   private spellReferenceNumber(referenceNumber: string): string {
     return referenceNumber

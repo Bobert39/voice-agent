@@ -146,6 +146,158 @@ export class OpenEMRSchedulingClient {
   }
 
   /**
+   * Get available appointment slots for next 60 days with enhanced filtering
+   * Implements Story 3.1 requirements for comprehensive availability lookup
+   */
+  async getAvailableSlotsEnhanced(
+    startDate: string,
+    endDate: string,
+    practitionerId?: string,
+    appointmentType?: string,
+    includeMetadata: boolean = true
+  ): Promise<AppointmentSlot[]> {
+    await this.ensureAuthenticated();
+
+    // Build query parameters for 60-day window
+    const params = new URLSearchParams({
+      start: startDate,
+      end: endDate,
+      status: 'free',
+      _count: '1000', // Ensure we get all slots in the 60-day window
+      _sort: 'start'
+    });
+
+    if (practitionerId) {
+      params.append('schedule.actor', `Practitioner/${practitionerId}`);
+    }
+
+    if (appointmentType) {
+      params.append('appointment-type', appointmentType);
+    }
+
+    // Include service-type for better filtering
+    if (includeMetadata) {
+      params.append('_include', 'Slot:schedule');
+      params.append('_include', 'Schedule:actor');
+    }
+
+    const response = await this.makeAuthenticatedRequest(`/fhir/Slot?${params}`);
+
+    if (response.entry && Array.isArray(response.entry)) {
+      return response.entry
+        .filter((entry: any) => entry.resource?.resourceType === 'Slot')
+        .map((entry: any) => this.mapToAppointmentSlot(entry.resource));
+    }
+
+    return [];
+  }
+
+  /**
+   * Get calendar data for a specific practitioner with detailed availability
+   */
+  async getPractitionerCalendar(
+    practitionerId: string,
+    startDate: Date,
+    days: number = 60
+  ): Promise<Map<string, AppointmentSlot[]>> {
+    await this.ensureAuthenticated();
+
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + days);
+
+    const slots = await this.getAvailableSlotsEnhanced(
+      startDate.toISOString().split('T')[0],
+      endDate.toISOString().split('T')[0],
+      practitionerId
+    );
+
+    // Group slots by date for easier calendar visualization
+    const calendar = new Map<string, AppointmentSlot[]>();
+
+    slots.forEach(slot => {
+      const dateKey = slot.start.split('T')[0];
+      if (!calendar.has(dateKey)) {
+        calendar.set(dateKey, []);
+      }
+      calendar.get(dateKey)!.push(slot);
+    });
+
+    return calendar;
+  }
+
+  /**
+   * Batch fetch slots for multiple practitioners (optimized for performance)
+   */
+  async getBatchPractitionerSlots(
+    practitionerIds: string[],
+    startDate: string,
+    endDate: string
+  ): Promise<Map<string, AppointmentSlot[]>> {
+    await this.ensureAuthenticated();
+
+    // Use FHIR batch request for efficiency
+    const batchRequest = {
+      resourceType: 'Bundle',
+      type: 'batch',
+      entry: practitionerIds.map(id => ({
+        request: {
+          method: 'GET',
+          url: `/Slot?schedule.actor=Practitioner/${id}&start=${startDate}&end=${endDate}&status=free`
+        }
+      }))
+    };
+
+    const response = await this.makeAuthenticatedRequest('/fhir', {
+      method: 'POST',
+      body: JSON.stringify(batchRequest)
+    });
+
+    const practitionerSlots = new Map<string, AppointmentSlot[]>();
+
+    if (response.entry && Array.isArray(response.entry)) {
+      response.entry.forEach((entry: any, index: number) => {
+        const practitionerId = practitionerIds[index];
+        const slots = entry.resource?.entry?.map((e: any) =>
+          this.mapToAppointmentSlot(e.resource)
+        ) || [];
+        practitionerSlots.set(practitionerId, slots);
+      });
+    }
+
+    return practitionerSlots;
+  }
+
+  /**
+   * Check real-time slot availability (for conflict detection)
+   */
+  async checkSlotAvailability(slotId: string): Promise<boolean> {
+    await this.ensureAuthenticated();
+
+    try {
+      const response = await this.makeAuthenticatedRequest(`/fhir/Slot/${slotId}`);
+      return response.status === 'free';
+    } catch (error) {
+      console.error('Error checking slot availability:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Map FHIR Slot resource to our AppointmentSlot interface
+   */
+  private mapToAppointmentSlot(fhirSlot: any): AppointmentSlot {
+    return {
+      id: fhirSlot.id,
+      start: fhirSlot.start,
+      end: fhirSlot.end,
+      status: fhirSlot.status,
+      schedule: fhirSlot.schedule?.reference,
+      appointmentType: fhirSlot.appointmentType?.coding?.[0]?.display,
+      operatingHours: fhirSlot.operatingHours
+    };
+  }
+
+  /**
    * Set tokens and expiry time
    */
   private setTokens(tokens: TokenResponse): void {

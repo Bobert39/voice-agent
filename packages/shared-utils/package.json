@@ -1,5 +1,5 @@
 {
-  "name": "@ai-voice-agent/shared-utils",
+  "name": "@voice-agent/shared-utils",
   "version": "1.0.0",
   "description": "Shared utilities for AI Voice Agent microservices",
   "main": "./dist/index.js",

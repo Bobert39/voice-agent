@@ -18,6 +18,9 @@ jest.mock('redis', () => ({
     set: jest.fn(),
     del: jest.fn(),
     exists: jest.fn(),
+    on: jest.fn(), // Add missing event handler
+    off: jest.fn(),
+    removeAllListeners: jest.fn(),
   })),
 }));
 
@@ -26,6 +29,7 @@ jest.mock('pg', () => ({
     connect: jest.fn(),
     query: jest.fn(),
     end: jest.fn(),
+    on: jest.fn(), // Add missing event handler
   })),
 }));
 

@@ -13,7 +13,12 @@ import {
   AppointmentDetails,
   AppointmentVerification
 } from '../types';
-import { logger } from '@voice-agent/shared-utils';
+// Temporary logger implementation
+const logger = {
+  error: (message: string, details?: any) => console.error(message, details),
+  info: (message: string, details?: any) => console.info(message, details),
+  warn: (message: string, details?: any) => console.warn(message, details)
+};
 
 export class AppointmentLookupService {
   private openemrClient: OpenEMRSchedulingClient;
@@ -155,7 +160,7 @@ export class AppointmentLookupService {
           success: false,
           message: `The information doesn't match our records. You have ${remainingAttempts} more attempt${remainingAttempts !== 1 ? 's' : ''}. ${this.generateVerificationPrompt({ conversationId }, storedAppointments.length)}`,
           requiresVerification: true,
-          verificationMethod: verification.method
+          verificationMethod: 'phone'
         };
       }
 
@@ -305,6 +310,7 @@ export class AppointmentLookupService {
   private generateAppointmentSummary(appointments: AppointmentDetails[]): string {
     if (appointments.length === 1) {
       const apt = appointments[0];
+      if (!apt) return 'No appointment found.';
       const date = new Date(apt.datetime);
       const dateStr = date.toLocaleDateString('en-US', { 
         weekday: 'long', 
@@ -322,6 +328,7 @@ export class AppointmentLookupService {
     } else {
       const sortedApts = appointments.sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
       const nextApt = sortedApts[0];
+      if (!nextApt) return 'No appointments found.';
       const date = new Date(nextApt.datetime);
       const dateStr = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
       
@@ -421,7 +428,9 @@ export class AppointmentLookupService {
     verificationData: Partial<AppointmentVerification>
   ): Promise<boolean> {
     // Get patient details from first appointment
-    const patientId = appointments[0].patientId;
+    const firstAppointment = appointments[0];
+    if (!firstAppointment) return false;
+    const patientId = firstAppointment.patientId;
     const patient = await this.openemrClient.getPatientDetails(patientId);
     
     if (!patient) {
@@ -464,8 +473,8 @@ export class AppointmentLookupService {
     futureDate.setDate(futureDate.getDate() + 30);
     
     return {
-      start: today.toISOString().split('T')[0],
-      end: futureDate.toISOString().split('T')[0]
+      start: today.toISOString().split('T')[0]!,
+      end: futureDate.toISOString().split('T')[0]!
     };
   }
 }

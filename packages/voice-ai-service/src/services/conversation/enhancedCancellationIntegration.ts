@@ -3,19 +3,19 @@
  * 
  * Integrates the enhanced cancellation system with the conversation management
  * system, providing natural language handling for complex cancellation scenarios,
- * emergency protocols, and elderly-friendly conversation patterns.
+ * emergency protocols, and patient-friendly conversation patterns.
  */
 
-import { EnhancedCancellationService } from '../../../../scheduling-service/src/services/enhanced-cancellation-service';
-import { 
-  ConversationContext, 
-  IntentResult, 
-  ConversationFlowState 
-} from '@voice-agent/shared-utils';
-import { 
+import {
+  EnhancedCancellationService,
   EnhancedCancellationRequest,
-  EnhancedCancellationResponse 
-} from '../../../../scheduling-service/src/types';
+  EnhancedCancellationResponse
+} from '@voice-agent/scheduling-service';
+import {
+  ConversationContext,
+  IntentResult,
+  ConversationFlowState
+} from '@voice-agent/shared-utils';
 import { logger } from '@voice-agent/shared-utils';
 
 export class EnhancedCancellationIntegration {
@@ -297,7 +297,7 @@ export class EnhancedCancellationIntegration {
       if (response.success) {
         let message = response.message;
 
-        // Add elderly-friendly next steps
+        // Add patient-friendly next steps
         message += " ";
         if (response.emergencyProtocolActivated) {
           message += "Our medical staff has been notified of your emergency cancellation and may contact you to offer assistance. ";
@@ -422,7 +422,7 @@ export class EnhancedCancellationIntegration {
   }
 
   /**
-   * Generate elderly-friendly clarification prompts
+   * Generate patient-friendly clarification prompts
    */
   generateClarificationPrompt(misunderstoodIntent: string, context: ConversationContext): string {
     const currentState = context.currentFlowState;

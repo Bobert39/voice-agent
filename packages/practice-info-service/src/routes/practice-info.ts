@@ -2,13 +2,13 @@ import { Router, Request, Response } from 'express';
 import { createLogger } from '@ai-voice-agent/shared-utils';
 import { practiceInfoService } from '../services/practice-info-service';
 import { dynamicResponseService } from '../services/dynamic-response-service';
-import { ResponseGenerationContext, ElderlyFriendlyConfig } from '../types';
+import { ResponseGenerationContext, PatientResponseConfig } from '../types';
 
 const router = Router();
 const logger = createLogger('practice-info-routes');
 
-// Default elderly-friendly configuration
-const defaultElderlyConfig: ElderlyFriendlyConfig = {
+// Default patient-friendly configuration
+const defaultPatientConfig: PatientResponseConfig = {
   speechSpeedWpm: 160,
   pauseDurationMs: 750,
   confirmationPrompts: true,
@@ -21,22 +21,12 @@ const defaultElderlyConfig: ElderlyFriendlyConfig = {
  * Create response generation context from request
  */
 function createContext(req: Request): ResponseGenerationContext {
-  const elderlyMode = req.query.elderlyMode === 'true' || req.body.elderlyMode === true;
-  
   return {
     currentTime: new Date(),
     userTimezone: (req.query.timezone as string) || (req.body.timezone as string),
     previousQuestions: req.body.previousQuestions || [],
     conversationContext: req.body.conversationContext,
-    elderlyFriendlyMode: elderlyMode,
-    config: elderlyMode ? defaultElderlyConfig : {
-      speechSpeedWpm: 180,
-      pauseDurationMs: 500,
-      confirmationPrompts: false,
-      repetitionAvailable: true,
-      maxInformationChunks: 5,
-      useStructuredLanguage: false,
-    },
+    config: defaultPatientConfig,
   };
 }
 
@@ -57,9 +47,8 @@ router.post('/query', async (req: Request, res: Response) => {
 
     const context = createContext(req);
     
-    logger.info('Processing practice info query', { 
-      query, 
-      elderlyMode: context.elderlyFriendlyMode,
+    logger.info('Processing practice info query', {
+      query,
       userAgent: req.get('User-Agent'),
       ip: req.ip,
     });
@@ -70,7 +59,6 @@ router.post('/query', async (req: Request, res: Response) => {
       success: true,
       data: {
         response,
-        elderlyFriendlyMode: context.elderlyFriendlyMode,
         timestamp: context.currentTime.toISOString(),
       },
     });
@@ -114,15 +102,11 @@ router.get('/status', async (req: Request, res: Response) => {
 router.get('/hours', async (req: Request, res: Response) => {
   try {
     const locationId = req.query.locationId as string;
-    const elderlyMode = req.query.elderlyMode === 'true';
-    
     const currentStatus = await dynamicResponseService.getCurrentStatus(locationId);
     const weeklyHours = await dynamicResponseService.getWeeklyHours(locationId);
-    
+
     const context = createContext(req);
-    const response = elderlyMode 
-      ? dynamicResponseService.generateBusinessHoursResponse(currentStatus, weeklyHours, context)
-      : null;
+    const response = await dynamicResponseService.generateBusinessHoursResponse(currentStatus, weeklyHours, context);
     
     return res.json({
       success: true,
@@ -147,12 +131,9 @@ router.get('/hours', async (req: Request, res: Response) => {
  */
 router.get('/location', async (req: Request, res: Response) => {
   try {
-    const elderlyMode = req.query.elderlyMode === 'true';
     const context = createContext(req);
-    
-    const response = elderlyMode 
-      ? await dynamicResponseService.generateLocationResponse(context)
-      : null;
+
+    const response = await dynamicResponseService.generateLocationResponse(context);
     
     // Get location data for structured response
     const practiceInfo = await practiceInfoService.getComprehensivePracticeInfo();
@@ -180,7 +161,6 @@ router.get('/location', async (req: Request, res: Response) => {
 router.post('/insurance', async (req: Request, res: Response) => {
   try {
     const { insuranceCompany, planName } = req.body;
-    const elderlyMode = req.query.elderlyMode === 'true' || req.body.elderlyMode === true;
     
     const context = createContext(req);
     
@@ -195,7 +175,6 @@ router.post('/insurance', async (req: Request, res: Response) => {
       success: true,
       data: {
         response,
-        elderlyFriendlyMode: elderlyMode,
       },
     });
   } catch (error) {
@@ -231,8 +210,7 @@ router.post('/preparation', async (req: Request, res: Response) => {
       data: {
         response,
         appointmentType,
-        elderlyFriendlyMode: context.elderlyFriendlyMode,
-      },
+              },
     });
   } catch (error) {
     logger.error('Failed to get preparation instructions', { error, body: req.body });

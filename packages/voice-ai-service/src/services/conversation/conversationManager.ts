@@ -1,17 +1,11 @@
 import Redis from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
-import { 
+import {
   ConversationState,
   ConversationStatus,
   ConversationTurn,
-  ConversationPhase,
-  ConversationFlow,
-  ConversationTransition,
   ConversationEnding,
-  ConversationTimeout,
   TurnContext,
-  ContextualMemory,
-  PendingAction,
   EmotionalState,
   ConversationAnalytics
 } from '@ai-voice-agent/shared-utils';
@@ -33,7 +27,7 @@ interface ConversationManagerConfig {
 export class ConversationManager {
   private redis: Redis;
   private contextManager: ConversationContextManager;
-  private escalationManager: EscalationManager;
+  private _escalationManager: EscalationManager;
   private config: ConversationManagerConfig;
   private timeouts: Map<string, NodeJS.Timeout> = new Map();
   private warningTimeouts: Map<string, NodeJS.Timeout[]> = new Map();
@@ -41,11 +35,11 @@ export class ConversationManager {
   constructor(
     config: ConversationManagerConfig,
     contextManager: ConversationContextManager,
-    escalationManager: EscalationManager
+    _escalationManager: EscalationManager
   ) {
     this.redis = config.redisClient;
     this.contextManager = contextManager;
-    this.escalationManager = escalationManager;
+    this._escalationManager = _escalationManager;
     this.config = config;
   }
 
@@ -274,7 +268,7 @@ export class ConversationManager {
       return null;
     }
 
-    const lastTurn = state.turns[state.turns.length - 1];
+    const _lastTurn = state.turns[state.turns.length - 1];
     const previousTurn = state.turns[state.turns.length - 2];
 
     const context: TurnContext = {
@@ -662,12 +656,12 @@ export class ConversationManager {
 
   private assessTopicContinuity(state: ConversationState): boolean {
     if (state.turns.length < 2) return true;
-    
+
     const lastTurn = state.turns[state.turns.length - 1];
     const previousTurn = state.turns[state.turns.length - 2];
-    
-    if (!lastTurn.topics || !previousTurn.topics) return false;
-    
+
+    if (!lastTurn?.topics || !previousTurn?.topics) return false;
+
     return lastTurn.topics.some(topic => previousTurn.topics?.includes(topic));
   }
 
@@ -683,12 +677,12 @@ export class ConversationManager {
 
   private assessHistoryReferences(state: ConversationState): boolean {
     if (state.turns.length === 0) return false;
-    
+
     const lastTurn = state.turns[state.turns.length - 1];
     const referenceWords = ['earlier', 'before', 'you said', 'mentioned', 'previous'];
-    
-    return referenceWords.some(word => 
-      lastTurn.text.toLowerCase().includes(word)
+
+    return referenceWords.some(word =>
+      lastTurn?.text.toLowerCase().includes(word)
     );
   }
 
@@ -701,7 +695,7 @@ export class ConversationManager {
       
       // Check for entity references
       state.contextualMemory.mentionedEntities.forEach(entity => {
-        if (lastTurn.text.toLowerCase().includes(entity.value.toLowerCase())) {
+        if (lastTurn?.text.toLowerCase().includes(entity.value.toLowerCase())) {
           references.push({
             type: 'entity_mention',
             entityId: entity.value,
@@ -713,7 +707,7 @@ export class ConversationManager {
 
       // Check for topic references
       state.contextualMemory.recentTopics.forEach(topic => {
-        if (lastTurn.text.toLowerCase().includes(topic.toLowerCase())) {
+        if (lastTurn?.text.toLowerCase().includes(topic.toLowerCase())) {
           references.push({
             type: 'topic_reference',
             confidence: 0.7,
@@ -730,8 +724,9 @@ export class ConversationManager {
     const nextSteps: string[] = [];
 
     // Based on conversation state and goals
-    if (state.incompleteGoals?.length) {
-      nextSteps.push('Follow up on incomplete goals: ' + state.conversationGoals.join(', '));
+    const incompleteGoals = state.conversationGoals.filter(goal => !state.completedGoals.includes(goal));
+    if (incompleteGoals.length > 0) {
+      nextSteps.push('Follow up on incomplete goals: ' + incompleteGoals.join(', '));
     }
 
     if (state.pendingActions.length > 0) {

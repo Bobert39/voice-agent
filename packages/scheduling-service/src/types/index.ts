@@ -433,7 +433,6 @@ export interface PreparationInstruction {
   description: string;
   timeframe?: string; // e.g., "24 hours before", "morning of appointment"
   mandatory: boolean;
-  elderlyFriendly: boolean;
 }
 
 export interface ReminderConfiguration {
@@ -476,7 +475,6 @@ export interface ReminderContent {
   appointmentDetails: AppointmentSummary;
   actionRequired?: boolean;
   confirmationRequired?: boolean;
-  elderlyOptimized: boolean;
 }
 
 export interface ReminderResponse {
@@ -562,7 +560,7 @@ export interface ConfirmationTemplate {
     contactInfo: string;
     closing: string;
   };
-  elderlyOptimizations: {
+  patientOptimizations: {
     slowerPace: boolean;
     simplifiedLanguage: boolean;
     repetitionEnabled: boolean;

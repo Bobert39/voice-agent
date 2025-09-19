@@ -207,10 +207,10 @@ export class VerificationSessionManager {
 
     // Store partial data from successful verification
     if (success) {
-      session.firstName = providedData.firstName;
-      session.lastName = providedData.lastName;
-      session.dob = providedData.dob;
-      session.phone = providedData.phone;
+      if (providedData.firstName) session.firstName = providedData.firstName;
+      if (providedData.lastName) session.lastName = providedData.lastName;
+      if (providedData.dob) session.dob = providedData.dob;
+      if (providedData.phone) session.phone = providedData.phone;
     }
 
     // Check if max attempts reached

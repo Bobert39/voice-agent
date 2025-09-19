@@ -211,7 +211,7 @@ export interface PracticeInfoResponseDTO {
 }
 
 // Response generation configuration
-export interface ElderlyFriendlyConfig {
+export interface PatientResponseConfig {
   speechSpeedWpm: number;
   pauseDurationMs: number;
   confirmationPrompts: boolean;
@@ -225,8 +225,7 @@ export interface ResponseGenerationContext {
   userTimezone?: string;
   previousQuestions: string[];
   conversationContext?: any;
-  elderlyFriendlyMode: boolean;
-  config: ElderlyFriendlyConfig;
+  config: PatientResponseConfig;
 }
 
 // Cache keys for Redis

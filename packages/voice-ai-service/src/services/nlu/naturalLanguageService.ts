@@ -61,7 +61,7 @@ interface NLUConfig {
     intent: string;
     maxRetries: number;
   };
-  elderly: {
+  patient: {
     patienceModifier: number;
     clarificationThreshold: number;
     repetitionTolerance: number;
@@ -102,8 +102,8 @@ export class NaturalLanguageService {
         turnCount: conversationContext?.turnCount || 0
       });
 
-      // Apply elderly-specific preprocessing
-      const processedUtterance = this.preprocessForElderly(utterance, conversationContext);
+      // Apply patient-friendly preprocessing
+      const processedUtterance = this.preprocessForPatients(utterance, conversationContext);
 
       // Recognize intent with context
       const intentResult = await this.intentService.recognizeIntent(
@@ -175,7 +175,7 @@ export class NaturalLanguageService {
   }
 
   /**
-   * Analyze sentiment specifically for elderly patients
+   * Analyze sentiment with patient-friendly considerations
    */
   async analyzeSentimentForElderly(
     utterance: string, 
@@ -184,10 +184,10 @@ export class NaturalLanguageService {
     try {
       const sentimentResult = await this.intentService.analyzeSentiment(utterance);
       
-      // Detect elderly-specific concerns
+      // Detect patient-specific concerns
       const concerns = this.detectElderlyConcerns(utterance, sentimentResult.emotionalMarkers);
       
-      // Adjust sentiment interpretation for elderly patients
+      // Adjust sentiment interpretation for patient context
       const adjustedSentiment = this.adjustSentimentForAge(
         sentimentResult.sentiment,
         concerns,
@@ -275,16 +275,16 @@ export class NaturalLanguageService {
    * Private helper methods
    */
 
-  private preprocessForElderly(utterance: string, context?: ConversationContext): string {
+  private preprocessForPatients(utterance: string, context?: ConversationContext): string {
     let processed = utterance.toLowerCase().trim();
 
-    // Handle common elderly speech patterns
+    // Handle common speech patterns
     if (context?.patientInfo?.hearingDifficulty) {
       // Account for potential mishearing
       processed = this.correctCommonMishearings(processed);
     }
 
-    // Handle repetition (common in elderly speech)
+    // Handle repetition (common in speech)
     processed = this.handleRepetition(processed);
 
     // Normalize medical terminology
@@ -311,7 +311,7 @@ export class NaturalLanguageService {
   }
 
   private handleRepetition(utterance: string): string {
-    // Remove simple repetitions common in elderly speech
+    // Remove simple repetitions common in speech
     const words = utterance.split(' ');
     const deduped = words.filter((word, index) => {
       if (index === 0) return true;
@@ -407,7 +407,7 @@ export class NaturalLanguageService {
     if (!context?.patientInfo?.isElderly) return responses;
 
     return responses.map(response => {
-      // Make responses more patient and clear for elderly
+      // Make responses more patient and clear
       if (context.patientInfo?.preferredPace === 'slow') {
         return this.simplifyLanguage(response);
       }
@@ -421,7 +421,7 @@ export class NaturalLanguageService {
   }
 
   private simplifyLanguage(text: string): string {
-    // Simplify complex sentences for elderly patients
+    // Simplify complex sentences for all patients
     return text
       .replace(/I'd be happy to/g, 'I can')
       .replace(/at your convenience/g, 'when you want')
@@ -662,8 +662,8 @@ export class NaturalLanguageService {
       this.intentService.updateConfidenceThreshold(this.config.confidence.threshold);
     }
     
-    if (updates.elderly) {
-      Object.assign(this.config.elderly, updates.elderly);
+    if (updates.patient) {
+      Object.assign(this.config.patient, updates.patient);
     }
   }
 }

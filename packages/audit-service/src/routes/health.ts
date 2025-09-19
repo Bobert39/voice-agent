@@ -1,5 +1,14 @@
 import express from 'express';
-import { HealthCheckResponse } from '@ai-voice-agent/shared-utils';
+// import { HealthCheckResponse } from '@ai-voice-agent/shared-utils';
+
+// Temporary implementation until shared-utils is available
+interface HealthCheckResponse {
+  status: string;
+  timestamp: string;
+  service: string;
+  version: string;
+  uptime: number;
+}
 
 const router = express.Router();
 

@@ -1,14 +1,14 @@
 import { Router, Request, Response } from 'express';
 import twilio from 'twilio';
-import { logger } from '@ai-voice-agent/shared-utils';
-import { AudioProcessingService } from '../services/audio/audioProcessingService';
+import { createLogger } from '@ai-voice-agent/shared-utils';
 import { VoiceConversationService } from '../services/voice/voiceConversationService';
+
+const logger = createLogger('voice-routes');
 
 const router = Router();
 const VoiceResponse = twilio.twiml.VoiceResponse;
 
 // Initialize services
-const audioService = new AudioProcessingService();
 const voiceConversationService = new VoiceConversationService();
 
 /**
@@ -33,13 +33,12 @@ router.post('/webhook/twilio/call', async (req: Request, res: Response) => {
     
     // Say the welcome message with slower speed for elderly patients
     twiml.say({
-      voice: 'alice',
-      rate: '85%'  // Slower rate for elderly patients
+      voice: 'alice'
     }, welcomeMessage);
 
     // Start recording and gathering speech input
-    const gather = twiml.gather({
-      input: 'speech',
+    twiml.gather({
+      input: ['speech'],
       timeout: 5,
       speechTimeout: 'auto',
       action: '/voice/webhook/twilio/process-speech',
@@ -48,8 +47,7 @@ router.post('/webhook/twilio/call', async (req: Request, res: Response) => {
 
     // If no input detected, provide fallback
     twiml.say({
-      voice: 'alice',
-      rate: '85%'
+      voice: 'alice'
     }, "I didn't hear anything. Let me transfer you to our staff. Please hold.");
 
     twiml.hangup();
@@ -67,8 +65,7 @@ router.post('/webhook/twilio/call', async (req: Request, res: Response) => {
     // Return a graceful error response
     const twiml = new VoiceResponse();
     twiml.say({
-      voice: 'alice',
-      rate: '85%'
+      voice: 'alice'
     }, "I'm sorry, we're experiencing technical difficulties. Please call back in a few minutes or hold for our staff.");
     
     twiml.hangup();
@@ -101,13 +98,12 @@ router.post('/webhook/twilio/process-speech', async (req: Request, res: Response
       });
 
       twiml.say({
-        voice: 'alice',
-        rate: '85%'
+        voice: 'alice'
       }, "I'm sorry, I didn't understand that clearly. Could you please repeat your question?");
 
       // Give another chance to speak
-      const gather = twiml.gather({
-        input: 'speech',
+      twiml.gather({
+        input: ['speech'],
         timeout: 5,
         speechTimeout: 'auto',
         action: '/voice/webhook/twilio/process-speech',
@@ -125,14 +121,13 @@ router.post('/webhook/twilio/process-speech', async (req: Request, res: Response
 
     // Generate appropriate TwiML response
     twiml.say({
-      voice: 'alice',
-      rate: '85%'
+      voice: 'alice'
     }, response.message);
 
     // If conversation should continue, gather more input
     if (response.expectsMoreInput) {
-      const gather = twiml.gather({
-        input: 'speech',
+      twiml.gather({
+        input: ['speech'],
         timeout: 5,
         speechTimeout: 'auto',
         action: '/voice/webhook/twilio/process-speech',
@@ -141,8 +136,7 @@ router.post('/webhook/twilio/process-speech', async (req: Request, res: Response
     } else {
       // End the call politely
       twiml.say({
-        voice: 'alice',
-        rate: '85%'
+        voice: 'alice'
       }, "Thank you for calling Capitol Eye Care. Have a wonderful day!");
       twiml.hangup();
     }
@@ -159,8 +153,7 @@ router.post('/webhook/twilio/process-speech', async (req: Request, res: Response
 
     const twiml = new VoiceResponse();
     twiml.say({
-      voice: 'alice',
-      rate: '85%'
+      voice: 'alice'
     }, "I apologize for the technical difficulty. Let me transfer you to our staff.");
     
     twiml.hangup();
@@ -172,7 +165,7 @@ router.post('/webhook/twilio/process-speech', async (req: Request, res: Response
 /**
  * Health check endpoint for voice service
  */
-router.get('/health', (req: Request, res: Response) => {
+router.get('/health', (_req: Request, res: Response) => {
   res.json({
     status: 'healthy',
     service: 'voice-ai-service',

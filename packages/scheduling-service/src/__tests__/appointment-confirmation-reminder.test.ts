@@ -228,7 +228,7 @@ describe('Story 3.5: Appointment Confirmation and Reminder System', () => {
         expect(result.message).toContain(result.confirmationNumber.split('').join('-')); // Hyphenated for voice
       });
 
-      it('should include elderly-friendly preparation instructions', async () => {
+      it('should include patient-friendly preparation instructions', async () => {
         // Arrange
         const mockAppointment = {
           id: 'apt-123',
@@ -287,7 +287,7 @@ describe('Story 3.5: Appointment Confirmation and Reminder System', () => {
         expect(result.preparationInstructions?.length).toBeGreaterThan(0);
         
         const instruction = result.preparationInstructions?.[0];
-        expect(instruction?.elderlyFriendly).toBe(true);
+        expect(instruction?.patientFriendly).toBe(true);
         expect(instruction?.description).toContain('Please'); // More verbose, polite language
       });
     });
@@ -607,8 +607,8 @@ describe('Story 3.5: Appointment Confirmation and Reminder System', () => {
       expect(true).toBe(true);
     });
 
-    it('should handle elderly patient workflow with accessibility optimizations', async () => {
-      // This would test the full elderly-friendly flow:
+    it('should handle patient workflow with accessibility optimizations', async () => {
+      // This would test the full patient-friendly flow:
       // 1. Slower-paced confirmation delivery
       // 2. Simplified language
       // 3. Voice-optimized confirmation numbers

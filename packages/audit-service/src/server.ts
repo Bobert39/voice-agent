@@ -4,9 +4,22 @@ import cors from 'cors';
 import compression from 'compression';
 import morgan from 'morgan';
 
-import { createLogger } from '@ai-voice-agent/shared-utils';
-import { SERVICE_PORTS } from '@ai-voice-agent/shared-utils';
+// import { createLogger } from '@ai-voice-agent/shared-utils';
+// import { SERVICE_PORTS } from '@ai-voice-agent/shared-utils';
+
+// Temporary implementation until shared-utils is available
+const createLogger = (service: string) => ({
+  info: (message: string, meta?: any) => console.log(`[${service}] INFO:`, message, meta || ''),
+  warn: (message: string, meta?: any) => console.log(`[${service}] WARN:`, message, meta || ''),
+  error: (message: string, meta?: any) => console.log(`[${service}] ERROR:`, message, meta || '')
+});
+
+const SERVICE_PORTS = {
+  AUDIT_SERVICE: 8084
+};
 import { healthRouter } from './routes/health';
+import { auditRouter } from './routes/audit';
+import { monitoringRouter } from './routes/monitoring';
 import { errorHandler } from './middleware/errorHandler';
 
 const logger = createLogger('audit-service');
@@ -36,7 +49,7 @@ app.use(cors({
   origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Service-Token', 'X-MFA-Token']
 }));
 
 // Compression and parsing
@@ -53,6 +66,8 @@ app.use(morgan('combined', {
 
 // Routes
 app.use('/health', healthRouter);
+app.use('/audit', auditRouter);
+app.use('/monitoring', monitoringRouter);
 
 // Global error handler
 app.use(errorHandler);

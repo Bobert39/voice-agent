@@ -3,10 +3,9 @@ import { ConversationManager } from '../services/conversation/conversationManage
 import { ConversationFlowHandler } from '../services/conversation/conversationFlowHandler';
 import { ConversationContextManager } from '../services/conversation/contextManager';
 import { EscalationManager } from '../services/escalation/escalationManager';
-import { 
-  ConversationStatus, 
-  ConversationPhase,
-  ConversationTurn 
+import {
+  ConversationStatus,
+  ConversationTurn
 } from '@ai-voice-agent/shared-utils';
 
 // Mock Redis
@@ -153,9 +152,9 @@ describe('ConversationManager', () => {
       );
 
       expect(updatedState.turns).toHaveLength(1);
-      expect(updatedState.turns[0].speaker).toBe('patient');
-      expect(updatedState.turns[0].text).toBe('Hello, I need to schedule an appointment');
-      expect(updatedState.turns[0].intent).toBe('appointment_request');
+      expect(updatedState.turns[0]?.speaker).toBe('patient');
+      expect(updatedState.turns[0]?.text).toBe('Hello, I need to schedule an appointment');
+      expect(updatedState.turns[0]?.intent).toBe('appointment_request');
       expect(updatedState.currentIntent).toBe('appointment_request');
       expect(mockContextManager.addConversationTurn).toHaveBeenCalled();
     });
@@ -475,7 +474,6 @@ describe('ConversationFlowHandler', () => {
 
 describe('Multi-turn Conversation Scenarios', () => {
   let conversationManager: ConversationManager;
-  let flowHandler: ConversationFlowHandler;
   let mockRedis: jest.Mocked<Redis>;
 
   beforeEach(() => {
@@ -496,12 +494,12 @@ describe('Multi-turn Conversation Scenarios', () => {
       {} as EscalationManager
     );
 
-    flowHandler = new ConversationFlowHandler(conversationManager, {
-      enableSmartTransitions: true,
-      contextWindowTurns: 3,
-      confidenceThreshold: 0.7,
-      enableTopicTracking: true
-    });
+    // flowHandler = new ConversationFlowHandler(conversationManager, {
+    //   enableSmartTransitions: true,
+    //   contextWindowTurns: 3,
+    //   confidenceThreshold: 0.7,
+    //   enableTopicTracking: true
+    // });
   });
 
   it('should handle complex multi-turn conversation with topic changes', async () => {
@@ -517,8 +515,8 @@ describe('Multi-turn Conversation Scenarios', () => {
     // Mock Redis to return updated states
     let conversationState = conversation;
     mockRedis.get.mockImplementation(() => Promise.resolve(JSON.stringify(conversationState)));
-    mockRedis.setex.mockImplementation((key, ttl, value) => {
-      conversationState = JSON.parse(value);
+    mockRedis.setex.mockImplementation((_key, _ttl, value) => {
+      conversationState = JSON.parse(value as string);
       return Promise.resolve('OK');
     });
 
@@ -579,8 +577,8 @@ describe('Multi-turn Conversation Scenarios', () => {
 
     let conversationState = conversation;
     mockRedis.get.mockImplementation(() => Promise.resolve(JSON.stringify(conversationState)));
-    mockRedis.setex.mockImplementation((key, ttl, value) => {
-      conversationState = JSON.parse(value);
+    mockRedis.setex.mockImplementation((_key, _ttl, value) => {
+      conversationState = JSON.parse(value as string);
       return Promise.resolve('OK');
     });
 
@@ -620,6 +618,6 @@ describe('Multi-turn Conversation Scenarios', () => {
     expect(finalState?.clarificationRequests).toBe(0); // Incremented by flow handler
     expect(finalState?.currentIntent).toBe('appointment_inquiry');
     expect(finalState?.contextualMemory.mentionedEntities).toHaveLength(1);
-    expect(finalState?.contextualMemory.mentionedEntities[0].value).toBe('last week');
+    expect(finalState?.contextualMemory.mentionedEntities[0]?.value).toBe('last week');
   });
 });

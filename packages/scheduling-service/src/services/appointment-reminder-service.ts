@@ -348,8 +348,6 @@ export class AppointmentReminderService {
   ): Promise<ReminderContent> {
     
     const appointmentDate = new Date(appointmentDetails.datetime);
-    const elderlyOptimized = patientPreferences?.accessibilityNeeds?.slowSpeech || 
-                            patientPreferences?.accessibilityNeeds?.repetitionRequired || false;
 
     // Create appointment summary
     const appointmentSummary: AppointmentSummary = {
@@ -382,46 +380,33 @@ export class AppointmentReminderService {
     
     if (timing.offsetHours >= 24) {
       subject = `Appointment Reminder - Tomorrow at ${appointmentSummary.time}`;
-      message = elderlyOptimized ? 
-        `Hello! This is a friendly reminder that you have an appointment tomorrow, ${appointmentSummary.date}, at ${appointmentSummary.time} with ${appointmentSummary.provider} at Capitol Eye Care.` :
-        `Reminder: You have an appointment tomorrow (${appointmentSummary.date}) at ${appointmentSummary.time} with ${appointmentSummary.provider}.`;
+      message = `Hello! This is a friendly reminder that you have an appointment tomorrow, ${appointmentSummary.date}, at ${appointmentSummary.time} with ${appointmentSummary.provider} at Capitol Eye Care.`;
     } else if (timing.offsetHours >= 2) {
       subject = `Appointment Reminder - Today at ${appointmentSummary.time}`;
-      message = elderlyOptimized ?
-        `Hello! This is a reminder that you have an appointment today at ${appointmentSummary.time} with ${appointmentSummary.provider} at Capitol Eye Care.` :
-        `Reminder: Your appointment is today at ${appointmentSummary.time} with ${appointmentSummary.provider}.`;
+      message = `Hello! This is a reminder that you have an appointment today at ${appointmentSummary.time} with ${appointmentSummary.provider} at Capitol Eye Care.`;
     } else {
       subject = `Appointment Reminder - Soon at ${appointmentSummary.time}`;
-      message = elderlyOptimized ?
-        `Hello! Just a gentle reminder that your appointment with ${appointmentSummary.provider} is coming up soon at ${appointmentSummary.time}.` :
-        `Your appointment with ${appointmentSummary.provider} is coming up at ${appointmentSummary.time}.`;
+      message = `Hello! Just a gentle reminder that your appointment with ${appointmentSummary.provider} is coming up soon at ${appointmentSummary.time}.`;
     }
 
     // Add weather information if available
     if (weatherData) {
       if (weatherData.precipitation > 50) {
-        message += elderlyOptimized ?
-          ` Please note that rain is expected today, so you may want to allow extra travel time and bring an umbrella.` :
-          ` Rain expected - allow extra travel time.`;
+        message += ` Please note that rain is expected today, so you may want to allow extra travel time and bring an umbrella.`;
       } else if (weatherData.temperature < 32) {
-        message += elderlyOptimized ?
-          ` It will be quite cold today, so please dress warmly and be careful of icy conditions.` :
-          ` Cold weather expected - dress warmly and watch for ice.`;
+        message += ` It will be quite cold today, so please dress warmly and be careful of icy conditions.`;
       }
     }
 
     // Add confirmation request for two-way interaction
     if (this.reminderConfig.twoWayInteraction && deliveryMethod === 'sms') {
-      message += elderlyOptimized ?
-        ` Please reply 'YES' to confirm you'll be there, or 'HELP' if you need to make changes.` :
-        ` Reply YES to confirm or HELP for changes.`;
+      message += ` Please reply 'YES' to confirm you'll be there, or 'HELP' if you need to make changes.`;
     }
 
     // Get preparation instructions
     const preparationInstructions = await this.getPreparationInstructions(
       appointmentDetails.type,
-      timing.offsetHours,
-      elderlyOptimized
+      timing.offsetHours
     );
 
     return {
@@ -430,8 +415,7 @@ export class AppointmentReminderService {
       appointmentDetails: appointmentSummary,
       preparationInstructions,
       actionRequired: this.reminderConfig.twoWayInteraction,
-      confirmationRequired: timing.offsetHours <= 2,
-      elderlyOptimized
+      confirmationRequired: timing.offsetHours <= 2
     };
   }
 
@@ -591,8 +575,7 @@ export class AppointmentReminderService {
    */
   private async getPreparationInstructions(
     appointmentType: string,
-    offsetHours: number,
-    elderlyOptimized: boolean
+    offsetHours: number
   ): Promise<PreparationInstruction[]> {
     
     const instructions: PreparationInstruction[] = [];
@@ -608,11 +591,8 @@ export class AppointmentReminderService {
         instructions.push({
           type: 'documents',
           title: 'What to Bring',
-          description: elderlyOptimized
-            ? 'Please remember to bring your insurance card and a list of your current medications.'
-            : 'Bring insurance card and medication list.',
-          mandatory: true,
-          elderlyFriendly: elderlyOptimized
+          description: 'Please remember to bring your insurance card and a list of your current medications.',
+          mandatory: true
         });
         break;
 
@@ -620,11 +600,8 @@ export class AppointmentReminderService {
         instructions.push({
           type: 'documents',
           title: 'What to Bring',
-          description: elderlyOptimized
-            ? 'Please bring your current glasses and any eye medications.'
-            : 'Bring current glasses and eye medications.',
-          mandatory: true,
-          elderlyFriendly: elderlyOptimized
+          description: 'Please bring your current glasses and any eye medications.',
+          mandatory: true
         });
         break;
     }
@@ -707,7 +684,6 @@ export class AppointmentReminderService {
       delivered,
       retryCount: reminder.retryCount,
       weatherIncluded: !!reminder.weatherData,
-      elderlyOptimized: reminder.content.elderlyOptimized
     };
     
     await this.redis.lpush(analyticsKey, JSON.stringify(analyticsData));

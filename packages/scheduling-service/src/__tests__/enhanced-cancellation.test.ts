@@ -7,7 +7,7 @@
  * - Staff notifications with categorization
  * - Emergency cancellation protocols
  * - Conversation flow integration
- * - Accessibility and elderly-friendly patterns
+ * - Accessibility and patient-friendly patterns
  */
 
 import { describe, beforeEach, afterEach, it, expect, jest } from '@jest/globals';
@@ -482,7 +482,7 @@ describe('Enhanced Cancellation System (Story 3.4)', () => {
       expect(result.confirmationDelivery?.email).toBe(true);
     });
 
-    it('should include elderly-friendly reference number pronunciation', async () => {
+    it('should include patient-friendly reference number pronunciation', async () => {
       redis.get.mockResolvedValue(JSON.stringify(mockAppointment));
 
       appointmentService.modifyAppointment.mockResolvedValue({
@@ -512,7 +512,7 @@ describe('Enhanced Cancellation System (Story 3.4)', () => {
 
       waitlistService.notifyWaitlistForCancelledSlot.mockResolvedValue([]);
       staffNotificationService.notifyStaffOfCancellation.mockResolvedValue({
-        id: 'sn_elderly',
+        id: 'sn_patient',
         type: 'cancellation',
         priority: 'low',
         title: 'Appointment cancelled',
@@ -526,7 +526,7 @@ describe('Enhanced Cancellation System (Story 3.4)', () => {
       const request: EnhancedCancellationRequest = {
         appointmentId: mockAppointment.id,
         patientId: mockAppointment.patientId,
-        conversationId: 'conv_elderly'
+        conversationId: 'conv_patient'
       };
 
       const result = await enhancedCancellationService.processCancellation(request);

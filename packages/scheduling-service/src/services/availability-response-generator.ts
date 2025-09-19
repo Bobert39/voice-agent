@@ -1,7 +1,7 @@
 /**
  * Natural Language Response Generator for Appointment Availability
  * 
- * Creates elderly-friendly, conversational responses for
+ * Creates patient-friendly, conversational responses for
  * appointment availability queries
  */
 
@@ -34,12 +34,12 @@ export class AvailabilityResponseGenerator {
       return this.generateNoAvailabilityResponse(queryContext);
     }
 
-    // Limit to max options to avoid overwhelming elderly patients
+    // Limit to max options to avoid overwhelming patients
     const slotsToPresent = slots.slice(0, maxOptions);
     
     let response = this.generateOpeningPhrase(slotsToPresent.length, queryContext);
     
-    // Present each slot in a clear, elderly-friendly format
+    // Present each slot in a clear, patient-friendly format
     slotsToPresent.forEach((slot, index) => {
       response += this.formatSlotOption(slot, index + 1, includeProvider);
     });
@@ -74,7 +74,7 @@ export class AvailabilityResponseGenerator {
   }
 
   /**
-   * Format a single slot option in elderly-friendly language
+   * Format a single slot option in patient-friendly language
    */
   private formatSlotOption(slot: TimeSlot, optionNumber: number, includeProvider: boolean): string {
     const date = new Date(slot.datetime);

@@ -108,7 +108,7 @@ describe('Appointment Management Services', () => {
 
         expect(result.success).toBe(true);
         expect(result.appointments).toHaveLength(1);
-        expect(result.appointments![0].confirmationNumber).toBe('CE12345');
+        expect(result.appointments?.[0]?.confirmationNumber).toBe('CE12345');
         expect(mockRedis.get).toHaveBeenCalledWith('appointment:confirmation:CE12345');
       });
 
@@ -235,7 +235,7 @@ describe('Appointment Management Services', () => {
   describe('AppointmentManagementService', () => {
     beforeEach(() => {
       // Mock getting appointment details
-      mockRedis.get.mockImplementation((key: string) => {
+      mockRedis.get.mockImplementation((key: any) => {
         if (key.startsWith('appointment:')) {
           return Promise.resolve(JSON.stringify(mockAppointment));
         }
@@ -627,7 +627,7 @@ describe('Appointment Management Services', () => {
 
       mockOpenEMRClient.updateAppointment.mockResolvedValue({
         ...futureAppointment,
-        datetime: mockSlots[0].datetime
+        datetime: mockSlots[0]?.datetime
       });
 
       expect(confirmResult.success).toBe(true);

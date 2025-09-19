@@ -6,7 +6,7 @@
  */
 
 import { OpenEMRClient, Patient } from './openemr-client';
-import { VerificationSessionManager, VerificationSession } from './verification-session-manager';
+import { VerificationSessionManager } from './verification-session-manager';
 import { createLogger } from '@ai-voice-agent/shared-utils';
 
 const logger = createLogger('patient-verification-service');
@@ -194,7 +194,7 @@ export class PatientVerificationService {
           firstName: request.firstName,
           lastName: request.lastName,
           dob: request.dateOfBirth,
-          phone: request.phoneNumber
+          ...(request.phoneNumber && { phone: request.phoneNumber })
         },
         failureReason,
         request.metadata
@@ -283,7 +283,7 @@ export class PatientVerificationService {
     const homeMatch = patient.phone_home && normalizePhone(patient.phone_home) === normalizedInput;
     const cellMatch = patient.phone_cell && normalizePhone(patient.phone_cell) === normalizedInput;
     
-    return homeMatch || cellMatch;
+    return Boolean(homeMatch || cellMatch);
   }
 
   /**
@@ -340,7 +340,7 @@ export class PatientVerificationService {
 
     return {
       valid: false,
-      error: result.error
+      ...(result.error && { error: result.error })
     };
   }
 
@@ -401,7 +401,7 @@ export class PatientVerificationService {
 
     try {
       // Test Redis connection
-      const session = await this.sessionManager.getSession('health_check');
+      await this.sessionManager.getSession('health_check');
       checks.redis = true;
     } catch (error) {
       logger.error('Redis health check failed', { error });

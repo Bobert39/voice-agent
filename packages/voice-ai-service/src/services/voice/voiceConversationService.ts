@@ -1,4 +1,7 @@
-import { logger } from '@ai-voice-agent/shared-utils';
+import { createLogger } from '@ai-voice-agent/shared-utils';
+import { PracticeHoursService } from '../practice/practiceHoursService';
+
+const logger = createLogger('voice-conversation-service');
 
 export interface VoiceResponse {
   message: string;
@@ -8,7 +11,12 @@ export interface VoiceResponse {
 }
 
 export class VoiceConversationService {
-  
+  private practiceHoursService: PracticeHoursService;
+
+  constructor() {
+    this.practiceHoursService = new PracticeHoursService();
+  }
+
   /**
    * Process voice input and generate appropriate response
    * Focused on basic practice hours inquiry as per Story 1.4
@@ -25,7 +33,7 @@ export class VoiceConversationService {
 
       // Detect practice hours inquiry intent
       if (this.isPracticeHoursInquiry(normalizedInput)) {
-        const response = await this.generatePracticeHoursResponse();
+        const response = await this.practiceHoursService.getElderlyFriendlyResponse();
         return {
           message: response,
           expectsMoreInput: false,
@@ -137,78 +145,7 @@ export class VoiceConversationService {
     return helpKeywords.some(keyword => input.includes(keyword));
   }
 
-  /**
-   * Generate practice hours response
-   * In a real implementation, this would connect to the practice-info-service
-   */
-  private async generatePracticeHoursResponse(): Promise<string> {
-    try {
-      // TODO: Connect to practice-info-service for real-time hours
-      // For now, return static response optimized for elderly patients
-      
-      const currentHour = new Date().getHours();
-      const currentDay = new Date().getDay(); // 0 = Sunday, 6 = Saturday
 
-      // Check if currently open (simplified logic)
-      const isCurrentlyOpen = this.isCurrentlyOpen(currentHour, currentDay);
-      
-      let response = "";
-
-      if (isCurrentlyOpen) {
-        response = "Yes, we are currently open! Our office hours are Monday through Friday from 8 AM to 5 PM, and Saturday from 9 AM to 2 PM. We're closed on Sundays. ";
-      } else {
-        response = "We are currently closed. Our regular office hours are Monday through Friday from 8 AM to 5 PM, and Saturday from 9 AM to 2 PM. We're closed on Sundays. ";
-      }
-
-      response += "If you need to schedule an appointment or have an urgent eye care concern, you can call us during business hours or visit our website. Is there anything else I can help you with?";
-
-      return response;
-
-    } catch (error) {
-      logger.error('Error generating practice hours response', {
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-
-      return "I can help you with our office hours. We're typically open Monday through Friday from 8 AM to 5 PM, and Saturday from 9 AM to 2 PM. For the most current information or to schedule an appointment, please call during business hours.";
-    }
-  }
-
-  /**
-   * Simple check if practice is currently open
-   * TODO: Replace with real practice-info-service integration
-   */
-  private isCurrentlyOpen(hour: number, dayOfWeek: number): boolean {
-    // Sunday = 0, Monday = 1, ..., Saturday = 6
-    
-    if (dayOfWeek === 0) { // Sunday
-      return false; // Closed on Sundays
-    }
-    
-    if (dayOfWeek >= 1 && dayOfWeek <= 5) { // Monday-Friday
-      return hour >= 8 && hour < 17; // 8 AM to 5 PM
-    }
-    
-    if (dayOfWeek === 6) { // Saturday
-      return hour >= 9 && hour < 14; // 9 AM to 2 PM
-    }
-
-    return false;
-  }
-
-  /**
-   * Get friendly response for current time context
-   */
-  private getTimeContextualGreeting(): string {
-    const currentHour = new Date().getHours();
-    
-    if (currentHour < 12) {
-      return "Good morning! Thank you for calling Capitol Eye Care.";
-    } else if (currentHour < 17) {
-      return "Good afternoon! Thank you for calling Capitol Eye Care.";
-    } else {
-      return "Good evening! Thank you for calling Capitol Eye Care.";
-    }
-  }
 }
 
 export default VoiceConversationService;

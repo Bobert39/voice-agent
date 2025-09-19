@@ -11,6 +11,7 @@
     { "path": "./packages/scheduling-service" },
     { "path": "./packages/patient-verification-service" },
     { "path": "./packages/audit-service" },
+    { "path": "./packages/practice-info-service" },
     { "path": "./packages/admin-dashboard" }
   ],
   "files": [],

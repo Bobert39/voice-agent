@@ -19,7 +19,7 @@ export interface NLUServiceConfig {
     intent?: string;
     maxRetries?: number;
   };
-  elderly?: {
+  patient?: {
     patienceModifier?: number;
     clarificationThreshold?: number;
     repetitionTolerance?: number;
@@ -79,8 +79,8 @@ export class NLUServiceFactory {
         intent: 'clarification_request', // Safe fallback for medical context
         maxRetries: 2
       },
-      elderly: {
-        patienceModifier: 1.5, // Extra patience for elderly patients
+      patient: {
+        patienceModifier: 1.5, // Extra patience for all patients
         clarificationThreshold: 0.5, // Lower threshold for asking clarification
         repetitionTolerance: 3 // Allow more repetition before flagging confusion
       }
@@ -109,7 +109,7 @@ export class NLUServiceFactory {
         intent: 'unknown',
         maxRetries: 1
       },
-      elderly: {
+      patient: {
         patienceModifier: 1.0,
         clarificationThreshold: 0.4,
         repetitionTolerance: 2
@@ -193,10 +193,10 @@ export class NLUServiceFactory {
         intent: config.fallback?.intent || 'clarification_request',
         maxRetries: config.fallback?.maxRetries || 2
       },
-      elderly: {
-        patienceModifier: config.elderly?.patienceModifier ?? 1.5,
-        clarificationThreshold: config.elderly?.clarificationThreshold ?? 0.5,
-        repetitionTolerance: config.elderly?.repetitionTolerance ?? 3
+      patient: {
+        patienceModifier: config.patient?.patienceModifier ?? 1.5,
+        clarificationThreshold: config.patient?.clarificationThreshold ?? 0.5,
+        repetitionTolerance: config.patient?.repetitionTolerance ?? 3
       }
     };
   }

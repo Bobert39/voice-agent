@@ -2,7 +2,6 @@ import { createLogger } from '@ai-voice-agent/shared-utils';
 import {
   PracticeInfoResponseDTO,
   ResponseGenerationContext,
-  ElderlyFriendlyConfig,
 } from '../types';
 import { dynamicResponseService } from './dynamic-response-service';
 import { practiceInfoRepository } from './repository';
@@ -51,7 +50,7 @@ export class PracticeInfoService {
     context: ResponseGenerationContext
   ): Promise<string> {
     try {
-      logger.info('Processing natural language query', { query, context: context.elderlyFriendlyMode });
+      logger.info('Processing natural language query', { query });
 
       // Classify the intent of the query
       const intent = await this.classifyQueryIntent(query);
@@ -87,7 +86,7 @@ export class PracticeInfoService {
       }
 
       // Enhance response with GPT-4 if available
-      if (this.openaiApiKey && context.elderlyFriendlyMode) {
+      if (this.openaiApiKey) {
         response = await this.enhanceResponseWithGPT4(response, query, context);
       }
 
@@ -285,12 +284,7 @@ export class PracticeInfoService {
         return "For information about our practice policies, please call our office and our staff will be happy to help you.";
       }
 
-      const { elderlyFriendlyMode, config } = context;
-      const elderlyConfig = elderlyFriendlyMode ? config : {
-        maxInformationChunks: 3,
-        confirmationPrompts: true,
-        useStructuredLanguage: true,
-      } as ElderlyFriendlyConfig;
+      const { config } = context;
 
       // Find relevant policies based on query
       const relevantPolicies = this.findRelevantPolicies(query, policies);
@@ -300,17 +294,17 @@ export class PracticeInfoService {
       }
 
       let response = "";
-      const policiesToInclude = relevantPolicies.slice(0, elderlyConfig.maxInformationChunks);
+      const policiesToInclude = relevantPolicies.slice(0, config.maxInformationChunks);
 
       policiesToInclude.forEach((policy, index) => {
         if (index > 0) {
-          response += elderlyConfig.useStructuredLanguage ? ' Also, ' : ' ';
+          response += config.useStructuredLanguage ? ' Also, ' : ' ';
         }
         
         response += policy.voiceSummary || policy.policyContent;
       });
 
-      if (elderlyConfig.confirmationPrompts) {
+      if (config.confirmationPrompts) {
         response += ' Do you have any other questions about our policies?';
       }
 
@@ -359,12 +353,7 @@ export class PracticeInfoService {
     try {
       const practiceInfo = await dynamicResponseService.generateComprehensivePracticeInfo(context);
       
-      const { elderlyFriendlyMode, config } = context;
-      const elderlyConfig = elderlyFriendlyMode ? config : {
-        maxInformationChunks: 3,
-        confirmationPrompts: true,
-        useStructuredLanguage: true,
-      } as ElderlyFriendlyConfig;
+      const { config } = context;
 
       let response = `${practiceInfo.practiceInfo.name} provides comprehensive eye care services. `;
 
@@ -376,11 +365,11 @@ export class PracticeInfoService {
 
       response += `We're located at ${practiceInfo.practiceInfo.primaryLocation.addressLine1} in ${practiceInfo.practiceInfo.primaryLocation.city}. `;
 
-      if (elderlyConfig.maxInformationChunks >= 2) {
+      if (config.maxInformationChunks >= 2) {
         response += `Our phone number is ${this.formatPhoneForSpeech(practiceInfo.practiceInfo.phone)}. `;
       }
 
-      if (elderlyConfig.confirmationPrompts) {
+      if (config.confirmationPrompts) {
         response += 'What specific information can I help you with today?';
       }
 
@@ -415,8 +404,8 @@ export class PracticeInfoService {
         response += `We're currently closed. ${currentStatus.nextOpenDay ? `We'll be open again ${currentStatus.nextOpenDay} at ${currentStatus.nextOpenTime}. ` : ''}`;
       }
 
-      const { elderlyFriendlyMode, config } = context;
-      if (elderlyFriendlyMode && config.confirmationPrompts) {
+      const { config } = context;
+      if (config.confirmationPrompts) {
         response += 'Would you like me to repeat our phone number?';
       }
 
@@ -434,19 +423,15 @@ export class PracticeInfoService {
     _query: string,
     context: ResponseGenerationContext
   ): Promise<string> {
-    const { elderlyFriendlyMode, config } = context;
-    const elderlyConfig = elderlyFriendlyMode ? config : {
-      confirmationPrompts: true,
-      useStructuredLanguage: true,
-    } as ElderlyFriendlyConfig;
+    const { config } = context;
 
     let response = "I'm not sure I understand exactly what you're looking for. ";
 
-    if (elderlyConfig.useStructuredLanguage) {
+    if (config.useStructuredLanguage) {
       response += "I can help you with information about our hours, location, insurance coverage, or appointment preparation. ";
     }
 
-    if (elderlyConfig.confirmationPrompts) {
+    if (config.confirmationPrompts) {
       response += "Could you tell me more specifically what information you need, or would you prefer to speak with one of our staff members?";
     }
 
@@ -467,7 +452,7 @@ export class PracticeInfoService {
   }
 
   /**
-   * Enhance response with GPT-4 for elderly-friendly phrasing
+   * Enhance response with GPT-4 for patient-friendly phrasing
    */
   private async enhanceResponseWithGPT4(
     response: string,
@@ -505,7 +490,7 @@ export class PracticeInfoService {
   ): string {
     const { config } = context;
     
-    return `You are helping an elderly patient (65+ years old) who called an eye care practice. 
+    return `You are helping a patient who called an eye care practice.
 
 CONTEXT:
 - Patient asked: "${originalQuery}"
@@ -519,14 +504,14 @@ REQUIREMENTS:
 - Include confirmation prompt if appropriate
 - Maintain all factual information from the original response
 
-ELDERLY-FRIENDLY GUIDELINES:
-- Speak slower with natural pauses
+GUIDELINES:
+- Speak clearly with natural pauses
 - Use "First," "Second," "Finally" for multiple points
 - Avoid complex sentences
 - Be warm and patient in tone
 - Include gentle confirmation checks
 
-Please rewrite the response to be more elderly-friendly while keeping all the important information:`;
+Please rewrite the response to be more patient-friendly while keeping all the important information:`;
   }
 
   /**
@@ -545,7 +530,7 @@ Please rewrite the response to be more elderly-friendly while keeping all the im
           messages: [
             {
               role: 'system',
-              content: 'You are an AI assistant helping to create elderly-friendly responses for a medical practice phone system. Focus on clarity, patience, and warmth.'
+              content: 'You are an AI assistant helping to create patient-friendly responses for a medical practice phone system. Focus on clarity, patience, and warmth.'
             },
             {
               role: 'user',
@@ -578,11 +563,11 @@ Please rewrite the response to be more elderly-friendly while keeping all the im
    * Generate error response
    */
   private generateErrorResponse(context: ResponseGenerationContext): string {
-    const { elderlyFriendlyMode, config } = context;
-    
+    const { config } = context;
+
     let response = "I apologize, but I'm having trouble accessing that information right now. ";
-    
-    if (elderlyFriendlyMode && config.confirmationPrompts) {
+
+    if (config.confirmationPrompts) {
       response += "Would you like me to transfer you to one of our staff members who can help you directly?";
     } else {
       response += "Please call our office and our staff will be happy to assist you.";
@@ -597,7 +582,6 @@ Please rewrite the response to be more elderly-friendly while keeping all the im
   async getComprehensivePracticeInfo(): Promise<PracticeInfoResponseDTO> {
     const context: ResponseGenerationContext = {
       currentTime: new Date(),
-      elderlyFriendlyMode: false,
       config: {
         speechSpeedWpm: 180,
         pauseDurationMs: 500,

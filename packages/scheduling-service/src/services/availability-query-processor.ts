@@ -318,24 +318,33 @@ export class AvailabilityQueryProcessor {
         'are there any slots',
         'what appointments do you have'
       ],
-      'appointment_type': [
-        'eye exam' => 'routine',
-        'check up' => 'routine',
-        'annual exam' => 'routine',
-        'follow up' => 'follow-up',
-        'recheck' => 'follow-up',
-        'urgent care' => 'urgent',
-        'emergency' => 'urgent'
-      ]
+      'appointment_type': {
+        'eye exam': 'routine',
+        'check up': 'routine',
+        'annual exam': 'routine',
+        'follow up': 'follow-up',
+        'recheck': 'follow-up',
+        'urgent care': 'urgent',
+        'emergency': 'urgent'
+      }
     };
 
     let normalized = rawQuery.toLowerCase().trim();
 
     // Apply normalizations
     for (const [intent, patterns] of Object.entries(normalizations)) {
-      for (const pattern of patterns) {
-        if (normalized.includes(pattern)) {
-          normalized = normalized.replace(pattern, intent);
+      if (Array.isArray(patterns)) {
+        for (const pattern of patterns) {
+          if (normalized.includes(pattern)) {
+            normalized = normalized.replace(pattern, intent);
+          }
+        }
+      } else {
+        // Handle appointment_type mapping (object)
+        for (const [pattern, replacement] of Object.entries(patterns)) {
+          if (normalized.includes(pattern)) {
+            normalized = normalized.replace(pattern, replacement);
+          }
         }
       }
     }

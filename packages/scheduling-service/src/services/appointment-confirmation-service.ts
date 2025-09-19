@@ -2,7 +2,7 @@
  * Appointment Confirmation Service
  * 
  * Handles immediate appointment confirmation delivery with multi-channel support,
- * preparation instructions, and elderly-friendly optimizations
+ * preparation instructions, and patient-friendly optimizations
  */
 
 import { Redis } from 'ioredis';
@@ -319,7 +319,7 @@ export class AppointmentConfirmationService {
   }
 
   /**
-   * Deliver voice confirmation with elderly-friendly optimizations
+   * Deliver voice confirmation with patient-friendly optimizations
    */
   private async deliverVoiceConfirmation(
     content: any,
@@ -332,7 +332,6 @@ export class AppointmentConfirmationService {
     logger.info('Voice confirmation delivered immediately during call', {
       appointmentId: request.appointmentId,
       patientId: request.patientId,
-      elderlyOptimized: patientPrefs?.accessibilityNeeds?.slowSpeech || false
     });
 
     return true; // Assume immediate voice confirmation succeeds
@@ -450,17 +449,15 @@ export class AppointmentConfirmationService {
   ): Promise<PreparationInstruction[]> {
     
     const instructions: PreparationInstruction[] = [];
-    const elderlyFriendly = accessibilityNeeds?.slowSpeech || accessibilityNeeds?.repetitionRequired || false;
 
     // Base instructions for all appointments
     instructions.push({
       type: 'arrival_time',
       title: 'Arrival Time',
-      description: elderlyFriendly 
+      description: true 
         ? 'Please arrive 15 minutes early to complete check-in forms.'
         : 'Arrive 15 minutes early for check-in.',
       mandatory: true,
-      elderlyFriendly
     });
 
     // Type-specific instructions
@@ -469,46 +466,42 @@ export class AppointmentConfirmationService {
         instructions.push({
           type: 'documents',
           title: 'What to Bring',
-          description: elderlyFriendly
+          description: true
             ? 'Please bring your insurance card, current list of medications, and previous glasses if you have them.'
             : 'Bring insurance card, medication list, and current glasses.',
           mandatory: true,
-          elderlyFriendly
-        });
+            });
         
         instructions.push({
           type: 'special_requirements',
           title: 'Eye Dilation',
-          description: elderlyFriendly
+          description: true
             ? 'Your eyes may be dilated during this exam. Please arrange for someone to drive you home, as your vision may be blurry for 2-4 hours.'
             : 'Eyes may be dilated. Arrange transportation as vision may be blurry for 2-4 hours.',
           mandatory: false,
-          elderlyFriendly
-        });
+            });
         break;
 
       case 'follow-up':
         instructions.push({
           type: 'documents',
           title: 'What to Bring',
-          description: elderlyFriendly
+          description: true
             ? 'Please bring your current glasses and any medications you are taking for your eyes.'
             : 'Bring current glasses and eye medications.',
           mandatory: true,
-          elderlyFriendly
-        });
+            });
         break;
 
       case 'urgent':
         instructions.push({
           type: 'special_requirements',
           title: 'Urgent Care Instructions',
-          description: elderlyFriendly
+          description: true
             ? 'For urgent eye care, please do not put any drops in your eyes unless instructed by our office. If this is an emergency, please call 911.'
             : 'Do not use eye drops unless instructed. Call 911 for emergencies.',
           mandatory: true,
-          elderlyFriendly
-        });
+            });
         break;
     }
 
@@ -569,7 +562,7 @@ export class AppointmentConfirmationService {
         contactInfo: 'If you need to make changes, please call our office.',
         closing: 'We look forward to seeing you.'
       },
-      elderlyOptimizations: {
+      patientOptimizations: {
         slowerPace: true,
         simplifiedLanguage: true,
         repetitionEnabled: true,

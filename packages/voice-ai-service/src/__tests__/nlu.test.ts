@@ -161,8 +161,8 @@ describe('Natural Language Understanding Service', () => {
     });
   });
 
-  describe('Elderly Patient Handling', () => {
-    test('should adapt responses for elderly patients', async () => {
+  describe('Patient-Specific Handling', () => {
+    test('should adapt responses for patients with accessibility needs', async () => {
       mockOpenAI.chat.completions.create.mockResolvedValue({
         choices: [{
           message: {
@@ -190,11 +190,11 @@ describe('Natural Language Understanding Service', () => {
       const result = await nluService.processUtterance(
         "I'm sorry, could you repeat that? I didn't quite hear you.",
         {
-          conversationId: 'test-elderly',
+          conversationId: 'test-patient',
           turnCount: 3,
           recentTopics: ['appointment'],
           patientInfo: {
-            isElderly: true,
+            hasAccessibilityNeeds: true,
             hearingDifficulty: true,
             preferredPace: 'slow'
           }
@@ -207,15 +207,15 @@ describe('Natural Language Understanding Service', () => {
       expect(result.context.suggestedResponses[0]).toContain('understand');
     });
 
-    test('should detect elderly speech patterns', async () => {
-      const sentiment = await nluService.analyzeSentimentForElderly(
+    test('should detect patient speech patterns needing support', async () => {
+      const sentiment = await nluService.analyzeSentimentForPatients(
         "Well, you see, I need to... what was I saying? Oh yes, my appointment.",
         {
-          conversationId: 'test-elderly-2',
+          conversationId: 'test-patient-2',
           turnCount: 2,
           recentTopics: [],
           patientInfo: {
-            isElderly: true,
+            hasAccessibilityNeeds: true,
             preferredPace: 'slow'
           }
         }

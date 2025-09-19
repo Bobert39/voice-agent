@@ -89,7 +89,7 @@ describe('AudioProcessingService', () => {
         .rejects.toThrow('Text-to-speech conversion failed');
     });
 
-    it('should use appropriate voice settings for elderly patients', async () => {
+    it('should use appropriate voice settings for patients', async () => {
       const testText = 'Our office hours are 8 AM to 5 PM';
       const mockAudioChunks = [Buffer.from('audio')];
       

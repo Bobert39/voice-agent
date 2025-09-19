@@ -1,0 +1,60 @@
+{
+  "name": "@voice-agent/monitoring-service",
+  "version": "1.0.0",
+  "description": "Performance monitoring and alerting service for Voice Agent",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "prometheus-api-metrics": "^3.2.2",
+    "prom-client": "^14.2.0",
+    "@opentelemetry/api": "^1.7.0",
+    "@opentelemetry/sdk-node": "^0.45.1",
+    "@opentelemetry/auto-instrumentations-node": "^0.40.3",
+    "@opentelemetry/exporter-prometheus": "^0.45.1",
+    "@opentelemetry/exporter-jaeger": "^1.17.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.45.1",
+    "node-cron": "^3.0.3",
+    "axios": "^1.6.2",
+    "twilio": "^4.19.0",
+    "redis": "^4.6.10",
+    "pg": "^8.11.3",
+    "winston": "^3.11.0",
+    "@voice-agent/shared-utils": "^1.0.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.0",
+    "@types/node-cron": "^3.0.11",
+    "@types/pg": "^8.10.9",
+    "@types/jest": "^29.5.8",
+    "@types/supertest": "^2.0.16",
+    "supertest": "^6.3.3",
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2",
+    "jest": "^29.7.0",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "roots": ["<rootDir>/src"],
+    "testMatch": ["**/__tests__/**/*.test.ts"],
+    "collectCoverageFrom": [
+      "src/**/*.ts",
+      "!src/**/*.d.ts"
+    ]
+  }
+}

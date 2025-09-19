@@ -20,7 +20,12 @@ import {
   ModificationConflict,
   TimeSlot
 } from '../types';
-import { logger } from '@voice-agent/shared-utils';
+// Temporary logger implementation
+const logger = {
+  error: (message: string, details?: any) => console.error(message, details),
+  info: (message: string, details?: any) => console.info(message, details),
+  warn: (message: string, details?: any) => console.warn(message, details)
+};
 
 export class AppointmentManagementService {
   private openemrClient: OpenEMRSchedulingClient;

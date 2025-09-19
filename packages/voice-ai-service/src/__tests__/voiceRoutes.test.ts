@@ -180,8 +180,8 @@ describe('Voice Routes', () => {
     });
   });
 
-  describe('Elderly-Friendly Features', () => {
-    it('should use slower speech rate for elderly patients', async () => {
+  describe('Patient-Friendly Features', () => {
+    it('should use slower speech rate for patients', async () => {
       const twilioPayload = {
         CallSid: 'CA1234567890abcdef',
         From: '+12345551234',
@@ -196,7 +196,7 @@ describe('Voice Routes', () => {
       expect(response.text).toContain('rate="85%"');
     });
 
-    it('should use appropriate voice for elderly patients', async () => {
+    it('should use appropriate voice for patients', async () => {
       const twilioPayload = {
         CallSid: 'CA1234567890abcdef',
         From: '+12345551234',

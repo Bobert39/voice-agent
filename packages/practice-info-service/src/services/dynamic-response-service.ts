@@ -5,7 +5,6 @@ import {
   CurrentStatusDTO,
   PracticeHoursDTO,
   PracticeInfoResponseDTO,
-  ElderlyFriendlyConfig,
   ResponseGenerationContext,
 } from '../types';
 import { practiceInfoRepository } from './repository';
@@ -14,17 +13,8 @@ import { cacheService } from './cache';
 const logger = createLogger('dynamic-response-service');
 
 export class DynamicResponseService {
-  private defaultElderlyConfig: ElderlyFriendlyConfig = {
-    speechSpeedWpm: 160, // Slower than normal 180-200 WPM
-    pauseDurationMs: 750, // Longer pauses for comprehension
-    confirmationPrompts: true,
-    repetitionAvailable: true,
-    maxInformationChunks: 3, // Limit information density
-    useStructuredLanguage: true,
-  };
-
   /**
-   * Generate current practice status with elderly-friendly messaging
+   * Generate current practice status
    */
   async getCurrentStatus(locationId?: string, timezone?: string): Promise<CurrentStatusDTO> {
     try {
@@ -191,7 +181,7 @@ export class DynamicResponseService {
   }
 
   /**
-   * Get weekly hours formatted for elderly-friendly responses
+   * Get weekly hours formatted for voice responses
    */
   async getWeeklyHours(locationId?: string): Promise<PracticeHoursDTO[]> {
     try {
@@ -217,7 +207,7 @@ export class DynamicResponseService {
   }
 
   /**
-   * Format business hours for elderly-friendly display
+   * Format business hours for display
    */
   private formatWeeklyHours(businessHours: BusinessHours[]): PracticeHoursDTO[] {
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -253,7 +243,7 @@ export class DynamicResponseService {
   }
 
   /**
-   * Format time for speech synthesis (12-hour format for elderly friendliness)
+   * Format time for speech synthesis (12-hour format)
    */
   private formatTimeForSpeech(timeString: string): string {
     if (!timeString) return '';
@@ -272,16 +262,13 @@ export class DynamicResponseService {
   }
 
   /**
-   * Generate elderly-friendly business hours response
+   * Generate business hours response
    */
   generateBusinessHoursResponse(
     currentStatus: CurrentStatusDTO,
     weeklyHours: PracticeHoursDTO[],
     context: ResponseGenerationContext
   ): string {
-    const { elderlyFriendlyMode, config } = context;
-    const elderlyConfig = elderlyFriendlyMode ? config : this.defaultElderlyConfig;
-
     let response = '';
 
     // Current status first
@@ -304,15 +291,11 @@ export class DynamicResponseService {
       response += `${currentStatus.specialNotice}. `;
     }
 
-    // Weekly hours summary (limit to 3 most relevant days for elderly friendliness)
-    if (elderlyConfig.maxInformationChunks >= 2) {
-      response += this.generateWeeklyHoursSummary(weeklyHours, elderlyConfig);
-    }
+    // Weekly hours summary
+    response += this.generateWeeklyHoursSummary(weeklyHours);
 
-    // Add confirmation prompt for elderly patients
-    if (elderlyConfig.confirmationPrompts) {
-      response += ' Would you like me to repeat our hours, or do you have other questions about visiting our office?';
-    }
+    // Add confirmation prompt
+    response += ' Would you like me to repeat our hours, or do you have other questions about visiting our office?';
 
     return response;
   }
@@ -326,9 +309,9 @@ export class DynamicResponseService {
   }
 
   /**
-   * Generate condensed weekly hours summary for elderly patients
+   * Generate condensed weekly hours summary
    */
-  private generateWeeklyHoursSummary(weeklyHours: PracticeHoursDTO[], _config: ElderlyFriendlyConfig): string {
+  private generateWeeklyHoursSummary(weeklyHours: PracticeHoursDTO[]): string {
     const openDays = weeklyHours.filter(h => h.isOpen);
     
     if (openDays.length === 0) {
@@ -406,37 +389,32 @@ export class DynamicResponseService {
         return "I apologize, but I'm having trouble accessing our location information right now. Please call our main number for directions to our office.";
       }
 
-      const { elderlyFriendlyMode, config } = context;
-      const elderlyConfig = elderlyFriendlyMode ? config : this.defaultElderlyConfig;
-
       let response = `We're located at ${location.addressLine1}`;
-      
+
       if (location.addressLine2) {
         response += `, ${location.addressLine2}`;
       }
-      
+
       response += ` in ${location.city}, ${location.state}. `;
 
-      // Add phone number with clear pronunciation for elderly patients
-      if (location.phoneNumber && elderlyConfig.useStructuredLanguage) {
+      // Add phone number
+      if (location.phoneNumber) {
         const formattedPhone = this.formatPhoneForSpeech(location.phoneNumber);
         response += `Our phone number is ${formattedPhone}. `;
       }
 
-      // Parking information (important for elderly patients)
-      if (location.parkingInstructions && elderlyConfig.maxInformationChunks >= 2) {
+      // Parking information
+      if (location.parkingInstructions) {
         response += `For parking: ${location.parkingInstructions} `;
       }
 
       // Accessibility features
-      if (location.accessibilityFeatures && location.accessibilityFeatures.length > 0 && elderlyConfig.maxInformationChunks >= 3) {
+      if (location.accessibilityFeatures && location.accessibilityFeatures.length > 0) {
         response += `Our office is wheelchair accessible with accessible parking spaces available. `;
       }
 
       // Confirmation prompt
-      if (elderlyConfig.confirmationPrompts) {
-        response += 'Would you like me to repeat our address, or do you need directions from a specific location?';
-      }
+      response += 'Would you like me to repeat our address, or do you need directions from a specific location?';
 
       return response;
     } catch (error) {
@@ -469,7 +447,6 @@ export class DynamicResponseService {
     context?: ResponseGenerationContext
   ): Promise<string> {
     try {
-      const elderlyConfig = context?.elderlyFriendlyMode ? context.config : this.defaultElderlyConfig;
 
       if (insuranceQuery) {
         // Specific insurance inquiry
@@ -500,9 +477,7 @@ export class DynamicResponseService {
             }
           }
 
-          if (elderlyConfig.confirmationPrompts) {
-            response += 'Do you have any other questions about your insurance coverage?';
-          }
+          response += 'Do you have any other questions about your insurance coverage?';
 
           return response;
         } else {
@@ -516,8 +491,8 @@ export class DynamicResponseService {
           return "Please call our office to discuss insurance coverage and payment options.";
         }
 
-        // Limit to most common plans for elderly-friendly response
-        const majorPlans = acceptedPlans.slice(0, elderlyConfig.maxInformationChunks * 2);
+        // Limit to most common plans
+        const majorPlans = acceptedPlans.slice(0, 6);
         const planNames = majorPlans.map(p => p.insuranceCompany);
         
         let response = "We accept most major insurance plans including ";
@@ -530,9 +505,7 @@ export class DynamicResponseService {
         
         response += '. We recommend calling our office to verify your specific plan and benefits. ';
 
-        if (elderlyConfig.confirmationPrompts) {
-          response += 'Would you like me to transfer you to our staff to check your insurance, or do you have other questions?';
-        }
+        response += 'Would you like me to transfer you to our staff to check your insurance, or do you have other questions?';
 
         return response;
       }
@@ -556,21 +529,18 @@ export class DynamicResponseService {
         return `I don't have specific preparation instructions for ${appointmentType} appointments. Please call our office and our staff will provide you with detailed preparation information.`;
       }
 
-      const { elderlyFriendlyMode, config } = context;
-      const elderlyConfig = elderlyFriendlyMode ? config : this.defaultElderlyConfig;
-
       let response = `For your ${appointmentTypeInfo.appointmentTypeName} appointment, here's what you need to know: `;
 
       const instructions: string[] = [];
 
-      // Driver requirement (critical for elderly patients)
+      // Driver requirement
       if (appointmentTypeInfo.requiresDriver) {
         instructions.push("You'll need someone to drive you to and from your appointment");
       }
 
       // What to bring
       if (appointmentTypeInfo.bringRequirements && appointmentTypeInfo.bringRequirements.length > 0) {
-        const items = appointmentTypeInfo.bringRequirements.slice(0, elderlyConfig.maxInformationChunks);
+        const items = appointmentTypeInfo.bringRequirements.slice(0, 3);
         instructions.push(`Please bring ${items.join(', ')}`);
       }
 
@@ -589,10 +559,10 @@ export class DynamicResponseService {
         instructions.push("Please don't eat or drink anything after midnight before your appointment");
       }
 
-      // Add instructions with proper pacing for elderly patients
+      // Add instructions
       instructions.forEach((instruction, index) => {
         if (index > 0) {
-          response += elderlyConfig.useStructuredLanguage ? '. Next, ' : '. ';
+          response += '. ';
         }
         response += instruction;
       });
@@ -600,9 +570,7 @@ export class DynamicResponseService {
       response += '. ';
 
       // Add confirmation and support
-      if (elderlyConfig.confirmationPrompts) {
-        response += 'Would you like me to repeat any of these instructions, or do you have questions about preparing for your visit?';
-      }
+      response += 'Would you like me to repeat any of these instructions, or do you have questions about preparing for your visit?';
 
       return response;
     } catch (error) {

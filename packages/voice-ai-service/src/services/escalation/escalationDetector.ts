@@ -1,8 +1,7 @@
-import { 
-  EscalationTrigger, 
-  EscalationPriority, 
+import {
+  EscalationTrigger,
+  EscalationPriority,
   ConversationTurn,
-  EmotionalState,
   EscalationContext,
   EscalationConfig
 } from '@ai-voice-agent/shared-utils';

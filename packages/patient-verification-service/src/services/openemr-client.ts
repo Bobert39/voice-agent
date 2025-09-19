@@ -185,7 +185,7 @@ export class OpenEMRClient {
         return nameMatch && dobMatch && phoneMatch;
       });
 
-      return matchingPatients.length === 1 ? matchingPatients[0] : null;
+      return matchingPatients.length === 1 ? (matchingPatients[0] ?? null) : null;
     } catch (error) {
       console.error('Patient verification failed:', error);
       throw new Error('Unable to verify patient identity');
@@ -225,8 +225,8 @@ export class OpenEMRClient {
       }
     }
 
-    this.accessToken = undefined;
-    this.refreshToken = undefined;
-    this.tokenExpiry = undefined;
+    delete this.accessToken;
+    delete this.refreshToken;
+    delete this.tokenExpiry;
   }
 }
