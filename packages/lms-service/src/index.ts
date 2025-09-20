@@ -8,6 +8,11 @@ import { authenticateToken, optionalAuth, requireActiveUser } from './middleware
 import learningModulesRouter from './routes/learningModules';
 import trainingScenariosRouter from './routes/trainingScenarios';
 import userProgressRouter from './routes/userProgress';
+import trainingSimulatorRouter from './routes/trainingSimulator';
+import quickReferenceRouter from './routes/quickReference';
+import feedbackRouter from './routes/feedback';
+import assessmentRouter from './routes/assessment';
+import videoLibraryRouter from './routes/videoLibrary';
 
 const app = express();
 const PORT = process.env.PORT || 3006;
@@ -88,11 +93,18 @@ app.post('/auth/demo-login', (req, res) => {
 // Public routes (no authentication required)
 app.get('/api/learning-modules', optionalAuth, learningModulesRouter);
 app.get('/api/training-scenarios', optionalAuth, trainingScenariosRouter);
+app.get('/api/quick-reference/cards', optionalAuth, quickReferenceRouter);
+app.get('/api/video-library/videos', optionalAuth, videoLibraryRouter);
 
 // Protected routes (authentication required)
 app.use('/api/learning-modules', authenticateToken, requireActiveUser, learningModulesRouter);
 app.use('/api/training-scenarios', authenticateToken, requireActiveUser, trainingScenariosRouter);
 app.use('/api/user-progress', authenticateToken, requireActiveUser, userProgressRouter);
+app.use('/api/simulator', authenticateToken, requireActiveUser, trainingSimulatorRouter);
+app.use('/api/quick-reference', authenticateToken, requireActiveUser, quickReferenceRouter);
+app.use('/api/feedback', authenticateToken, requireActiveUser, feedbackRouter);
+app.use('/api/assessment', authenticateToken, requireActiveUser, assessmentRouter);
+app.use('/api/video-library', authenticateToken, requireActiveUser, videoLibraryRouter);
 
 // API documentation endpoint
 app.get('/api/docs', (req, res) => {
@@ -127,6 +139,59 @@ app.get('/api/docs', (req, res) => {
           'GET /api/analytics/completion-rate': 'Get completion analytics (admin)',
           'GET /api/analytics/training': 'Get training analytics (admin)',
           'GET /api/users/status/:status': 'Get users by status (admin)'
+        },
+        'Training Simulator': {
+          'GET /api/simulator/scenarios': 'Get available training scenarios',
+          'GET /api/simulator/scenarios/:id': 'Get detailed scenario information',
+          'POST /api/simulator/start': 'Start a new simulation session',
+          'POST /api/simulator/action': 'Process user action during simulation',
+          'GET /api/simulator/status/:sessionId': 'Get current simulation status',
+          'POST /api/simulator/complete/:sessionId': 'Manually complete simulation (admin)',
+          'GET /api/simulator/analytics/scenarios': 'Get scenario performance analytics (admin)'
+        },
+        'Quick Reference': {
+          'GET /api/quick-reference/cards': 'Get all quick reference cards',
+          'GET /api/quick-reference/cards/:id': 'Get specific quick reference card',
+          'GET /api/quick-reference/cards/:id/printable': 'Get printable version of card',
+          'GET /api/quick-reference/categories': 'Get available categories',
+          'GET /api/quick-reference/categories/:category/cards': 'Get cards by category',
+          'GET /api/quick-reference/search': 'Search quick reference cards',
+          'POST /api/quick-reference/cards': 'Create new card (admin only)',
+          'PUT /api/quick-reference/cards/:id': 'Update card (admin only)',
+          'GET /api/quick-reference/analytics': 'Get usage analytics (admin only)'
+        },
+        'Feedback System': {
+          'POST /api/feedback/submit': 'Submit new feedback from staff',
+          'GET /api/feedback': 'Get feedback with optional filtering',
+          'GET /api/feedback/:id': 'Get specific feedback item',
+          'PUT /api/feedback/:id/status': 'Update feedback status (admin only)',
+          'GET /api/feedback/search': 'Search feedback',
+          'GET /api/feedback/user/:userId': 'Get feedback by user',
+          'GET /api/feedback/pending': 'Get pending feedback for dashboard',
+          'GET /api/feedback/analytics': 'Get feedback analytics (admin only)'
+        },
+        'Assessment System': {
+          'POST /api/assessment/start': 'Start a new competency assessment',
+          'POST /api/assessment/submit': 'Submit assessment answers',
+          'GET /api/assessment/result/:assessmentId': 'Get assessment result',
+          'GET /api/assessment/profile/:userId': 'Get user competency profile',
+          'GET /api/assessment/learning-path/:pathId': 'Get learning path information',
+          'GET /api/assessment/learning-path/:pathId/progress/:userId': 'Get learning path progress',
+          'GET /api/assessment/certificate/verify/:verificationCode': 'Verify certificate',
+          'GET /api/assessment/analytics': 'Get competency analytics (admin only)'
+        },
+        'Video Library': {
+          'GET /api/video-library/videos': 'Get all training videos',
+          'GET /api/video-library/videos/:id': 'Get specific video details',
+          'POST /api/video-library/videos/view': 'Record video view for analytics',
+          'POST /api/video-library/videos/rating': 'Add or update video rating',
+          'POST /api/video-library/videos/comment': 'Add comment to video',
+          'GET /api/video-library/playlists': 'Get video playlists',
+          'GET /api/video-library/playlists/:id': 'Get specific playlist with videos',
+          'GET /api/video-library/search': 'Search videos',
+          'GET /api/video-library/recommendations/:userId': 'Get personalized recommendations',
+          'GET /api/video-library/analytics/:videoId': 'Get video analytics (admin only)',
+          'GET /api/video-library/analytics/content-management': 'Get content metrics (admin only)'
         },
         'Authentication': {
           'POST /auth/demo-login': 'Demo login for testing',

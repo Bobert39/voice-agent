@@ -13,7 +13,7 @@
  * - Comprehensive error handling
  */
 
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 // Simple logger for enhanced OpenEMR client
 const logger = {
   info: (message: string, ...args: any[]) => console.log(`[INFO] ${message}`, ...args),
@@ -377,7 +377,9 @@ export class EnhancedOpenEMRClient {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Token request failed: ${response.status} - ${errorText}`);
+        const error: any = new Error(`Token request failed: ${response.status} - ${errorText}`);
+        error.status = response.status;
+        throw error;
       }
 
       return await response.json() as TokenResponse;
@@ -740,6 +742,9 @@ export class EnhancedOpenEMRClient {
       return this.mapFHIRToAppointment(response);
     } catch (error) {
       logger.error('Failed to update appointment:', error);
+      if (error instanceof Error && error.message.includes('Update would create conflict')) {
+        throw error;
+      }
       throw new Error('Unable to update appointment');
     }
   }

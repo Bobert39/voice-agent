@@ -8,7 +8,10 @@ import path from 'path';
 import { createLogger } from '@ai-voice-agent/shared-utils';
 import { SERVICE_PORTS } from '@ai-voice-agent/shared-utils';
 import { healthRouter } from './routes/health';
+import { authRouter } from './routes/auth';
 import { errorHandler } from './middleware/errorHandler';
+import { createGraphQLServer } from './api/graphql-server';
+import { DashboardWebSocketServer } from './api/websocket-server';
 
 const logger = createLogger('admin-dashboard');
 
@@ -62,6 +65,7 @@ app.use(morgan('combined', {
 
 // API Routes
 app.use('/health', healthRouter);
+app.use('/api/auth', authRouter);
 app.use('/api', express.Router().get('/', (_req, res) => {
   res.json({ message: 'Admin Dashboard API' });
 }));
@@ -74,26 +78,53 @@ app.get('*', (_req, res) => {
 // Global error handler
 app.use(errorHandler);
 
-// Start server
-const server = app.listen(port, () => {
-  logger.info(`Admin Dashboard listening on port ${port}`);
-});
+// Initialize GraphQL and WebSocket servers
+const initializeServers = async () => {
+  try {
+    // Create GraphQL server with subscriptions
+    const { httpServer, apolloServer } = await createGraphQLServer(app);
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
-  server.close(() => {
-    logger.info('Process terminated');
-    process.exit(0);
-  });
-});
+    // Create WebSocket server for real-time updates
+    const wsServer = new DashboardWebSocketServer(httpServer);
 
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, shutting down gracefully');
-  server.close(() => {
-    logger.info('Process terminated');
-    process.exit(0);
-  });
+    // Start HTTP server
+    httpServer.listen(port, () => {
+      logger.info(`Admin Dashboard listening on port ${port}`);
+      logger.info(`GraphQL endpoint: http://localhost:${port}/graphql`);
+      logger.info(`WebSocket endpoint: ws://localhost:${port}/socket.io`);
+      logger.info(`Dashboard UI: http://localhost:${port}`);
+    });
+
+    // Graceful shutdown
+    const shutdown = async () => {
+      logger.info('Shutting down gracefully...');
+
+      try {
+        await apolloServer.stop();
+        httpServer.close(() => {
+          logger.info('Process terminated');
+          process.exit(0);
+        });
+      } catch (error) {
+        logger.error('Error during shutdown:', error);
+        process.exit(1);
+      }
+    };
+
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
+
+    return { httpServer, apolloServer, wsServer };
+  } catch (error) {
+    logger.error('Failed to initialize servers:', error);
+    process.exit(1);
+  }
+};
+
+// Start the application
+initializeServers().catch((error) => {
+  logger.error('Application startup failed:', error);
+  process.exit(1);
 });
 
 export default app;

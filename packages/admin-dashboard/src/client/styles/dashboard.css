@@ -1,0 +1,419 @@
+/**
+ * Dashboard Styles for Capitol Eye Care Staff Interface
+ * Based on Story 4.2 UI specifications
+ */
+
+:root {
+  --primary-color: #2563eb;
+  --success-color: #16a34a;
+  --warning-color: #ea580c;
+  --danger-color: #dc2626;
+  --info-color: #0891b2;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-dark: #1e293b;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+}
+
+/* Login Container */
+.login-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--primary-color), var(--info-color));
+}
+
+.login-card {
+  background: var(--bg-primary);
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+}
+
+.login-card h1 {
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+  font-size: 1.5rem;
+}
+
+.login-card p {
+  margin-bottom: 2rem;
+  color: var(--text-secondary);
+}
+
+.login-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.login-btn:hover {
+  background: #1d4ed8;
+}
+
+/* Dashboard Layout */
+.dashboard-content {
+  padding: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.status-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 2fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.main-content {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Widget Styles */
+.widget {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.widget h3 {
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.status-widget {
+  composes: widget;
+}
+
+.metric-widget {
+  composes: widget;
+  text-align: center;
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.escalation-widget {
+  composes: widget;
+}
+
+/* System Status Indicators */
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-online {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-offline {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-degraded {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Active Calls Panel */
+.calls-panel {
+  composes: widget;
+  min-height: 400px;
+}
+
+.call-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.call-item {
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.call-item:hover {
+  background: #f1f5f9;
+  border-color: var(--primary-color);
+}
+
+.call-item.selected {
+  background: #eff6ff;
+  border-color: var(--primary-color);
+}
+
+.call-header {
+  display: flex;
+  justify-content: between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.patient-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.call-duration {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.call-state {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.state-greeting { background: #dbeafe; color: #1e40af; }
+.state-verification { background: #fed7aa; color: #c2410c; }
+.state-inquiry { background: #e0e7ff; color: #5b21b6; }
+.state-scheduling { background: #dcfce7; color: #166534; }
+.state-closing { background: #f3f4f6; color: #374151; }
+
+/* Escalation Panel */
+.escalations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.escalation-item {
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.priority-1 {
+  background: #fef2f2;
+  border-color: var(--danger-color);
+}
+
+.priority-2 {
+  background: #fffbeb;
+  border-color: var(--warning-color);
+}
+
+.priority-3 {
+  background: #fef3c7;
+  border-color: #f59e0b;
+}
+
+.priority-4 {
+  background: #f8fafc;
+  border-color: var(--border-color);
+}
+
+.escalation-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.priority-indicator {
+  font-size: 1rem;
+}
+
+.escalation-type {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+
+.escalation-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-claim {
+  background: var(--success-color);
+  color: white;
+  border: none;
+  padding: 0.375rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-claim:hover {
+  background: #15803d;
+}
+
+/* Recent Escalations Section */
+.recent-escalations {
+  composes: widget;
+}
+
+.recent-escalations h3 {
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Call Details Panel */
+.call-details {
+  composes: widget;
+  margin-top: 1rem;
+}
+
+.call-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.btn-listen {
+  background: var(--info-color);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-takeover {
+  background: var(--warning-color);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .status-row {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-content {
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .escalation-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .call-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .escalation-actions {
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+  }
+}
+
+/* Loading States */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+}
+
+.loading::after {
+  content: '...';
+  animation: loading-dots 1.5s infinite;
+}
+
+@keyframes loading-dots {
+  0%, 20% { content: '.'; }
+  40% { content: '..'; }
+  60% { content: '...'; }
+  80%, 100% { content: '.'; }
+}
+
+/* Connection Status */
+.connection-status {
+  position: fixed;
+  top: 0;
+  right: 1rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  padding: 0.5rem 1rem;
+  border-radius: 0 0 6px 6px;
+  font-size: 0.875rem;
+  z-index: 1000;
+}
+
+.connection-connected {
+  composes: connection-status;
+  background: #dcfce7;
+  border-color: var(--success-color);
+  color: #166534;
+}
+
+.connection-disconnected {
+  composes: connection-status;
+  background: #fee2e2;
+  border-color: var(--danger-color);
+  color: #991b1b;
+}
